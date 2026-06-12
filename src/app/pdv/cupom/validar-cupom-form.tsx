@@ -137,6 +137,12 @@ export function ValidarCupomForm() {
         <p className="text-xs text-slate-400">
           {confirmacao.pontosUtilizados} pontos utilizados neste resgate
         </p>
+        {cupom?.estabelecimentosAceitos && cupom.estabelecimentosAceitos.length > 0 && (
+          <div className="rounded-md bg-slate-50 p-3 text-left">
+            <p className="text-xs text-slate-500">Este cupom tambem e aceito em</p>
+            <p className="text-sm text-slate-700">{cupom.estabelecimentosAceitos.join(', ')}</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={reiniciar}

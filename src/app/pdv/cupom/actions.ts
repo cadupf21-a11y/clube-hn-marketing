@@ -17,6 +17,7 @@ export type CupomPreview = {
   descricao: string | null
   tipoBeneficio: CupomBeneficioTipo
   valorBeneficio: number | null
+  estabelecimentosAceitos: string[] | null
 }
 
 export type BuscarCupomState = {
@@ -49,6 +50,10 @@ export async function buscarCupom(
 
   const cupom = data[0]
 
+  if (!cupom.aceito_neste_parceiro) {
+    return { error: 'Este cupom não é válido neste estabelecimento.' }
+  }
+
   return {
     cupom: {
       id: cupom.id,
@@ -61,6 +66,7 @@ export async function buscarCupom(
       descricao: cupom.nivel_descricao ?? null,
       tipoBeneficio: cupom.tipo_beneficio ?? 'outro',
       valorBeneficio: cupom.valor_beneficio ?? null,
+      estabelecimentosAceitos: cupom.estabelecimentos_aceitos ?? null,
     },
   }
 }

@@ -496,6 +496,8 @@ export interface Database {
           nivel_descricao: string | null
           tipo_beneficio: CupomBeneficioTipo
           valor_beneficio: number | null
+          aceito_neste_parceiro: boolean
+          estabelecimentos_aceitos: string[] | null
         }[]
       }
       verificar_pin_atendente: {
