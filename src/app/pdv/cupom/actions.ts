@@ -70,6 +70,7 @@ export type ConfirmarResgateSucesso = {
   pontosUtilizados: number
   saldoAtual: number
   nivelNome: string
+  valorDesconto: number
 }
 
 export type ConfirmarResgateState = {
@@ -82,9 +83,14 @@ export async function confirmarResgate(
   formData: FormData
 ): Promise<ConfirmarResgateState> {
   const cupomId = String(formData.get('cupom_id') ?? '')
+  const valorCompra = Number(String(formData.get('valor_compra') ?? '').replace(',', '.'))
 
   if (!cupomId) {
     return { error: 'Cupom invalido.' }
+  }
+
+  if (!Number.isFinite(valorCompra) || valorCompra < 0) {
+    return { error: 'Informe o valor da compra.' }
   }
 
   const cookieStore = await cookies()
@@ -99,6 +105,7 @@ export async function confirmarResgate(
   const { data, error } = await supabase.rpc('resgatar_cupom', {
     p_cupom_id: cupomId,
     p_atendente_id: atendenteId,
+    p_valor_compra: valorCompra,
   })
 
   if (error || !data || data.length === 0) {
@@ -115,6 +122,7 @@ export async function confirmarResgate(
       pontosUtilizados: resultado.pontos_utilizados,
       saldoAtual: resultado.saldo_atual,
       nivelNome: resultado.nivel_nome,
+      valorDesconto: resultado.valor_desconto,
     },
   }
 }

@@ -210,6 +210,7 @@ export interface Database {
           data_validade: string
           data_resgate: string | null
           resgatado_por: string | null
+          valor_desconto: number | null
           created_at: string
         }
         Insert: {
@@ -224,6 +225,7 @@ export interface Database {
           data_validade: string
           data_resgate?: string | null
           resgatado_por?: string | null
+          valor_desconto?: number | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['cupons']['Insert']>
@@ -509,12 +511,13 @@ export interface Database {
         Returns: void
       }
       resgatar_cupom: {
-        Args: { p_cupom_id: string; p_atendente_id: string }
+        Args: { p_cupom_id: string; p_atendente_id: string; p_valor_compra: number }
         Returns: {
           membro_nome: string
           pontos_utilizados: number
           saldo_atual: number
           nivel_nome: string
+          valor_desconto: number
         }[]
       }
       gerar_cupom_membro: {

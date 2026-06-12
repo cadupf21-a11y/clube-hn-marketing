@@ -38,6 +38,22 @@ function formatarData(data: string) {
   return new Date(data).toLocaleDateString('pt-BR')
 }
 
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function calcularDesconto(cupom: CupomPreview, valorCompra: number) {
+  if (!Number.isFinite(valorCompra) || valorCompra < 0) return 0
+  switch (cupom.tipoBeneficio) {
+    case 'desconto_percentual':
+      return Math.round(valorCompra * (cupom.valorBeneficio ?? 0)) / 100
+    case 'desconto_valor':
+      return cupom.valorBeneficio ?? 0
+    default:
+      return 0
+  }
+}
+
 function BuscarButton() {
   const { pending } = useFormStatus()
   return (
@@ -71,6 +87,7 @@ export function ValidarCupomForm() {
   const [cupom, setCupom] = useState<CupomPreview | null>(null)
   const [confirmacao, setConfirmacao] = useState<ConfirmarResgateSucesso | null>(null)
   const [formKey, setFormKey] = useState(0)
+  const [valorCompra, setValorCompra] = useState('')
 
   useEffect(() => {
     if (buscaState.cupom) {
@@ -87,6 +104,7 @@ export function ValidarCupomForm() {
   function reiniciar() {
     setCupom(null)
     setConfirmacao(null)
+    setValorCompra('')
     setFormKey((k) => k + 1)
   }
 
@@ -110,6 +128,12 @@ export function ValidarCupomForm() {
             <p className="text-xl font-semibold text-slate-900">{confirmacao.saldoAtual}</p>
           </div>
         </div>
+        {confirmacao.valorDesconto > 0 && (
+          <div className="rounded-md bg-green-50 p-3">
+            <p className="text-xs text-slate-500">Desconto concedido</p>
+            <p className="text-xl font-semibold text-green-600">{formatarMoeda(confirmacao.valorDesconto)}</p>
+          </div>
+        )}
         <p className="text-xs text-slate-400">
           {confirmacao.pontosUtilizados} pontos utilizados neste resgate
         </p>
@@ -167,6 +191,35 @@ export function ValidarCupomForm() {
         {podeResgatar ? (
           <form action={confirmarAction} className="space-y-2">
             <input type="hidden" name="cupom_id" value={cupom.id} />
+
+            <div>
+              <label htmlFor="valor_compra" className="block text-sm font-medium text-slate-700">
+                Valor da compra (R$)
+              </label>
+              <input
+                id="valor_compra"
+                name="valor_compra"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                required
+                value={valorCompra}
+                onChange={(e) => setValorCompra(e.target.value)}
+                placeholder="0,00"
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {(cupom.tipoBeneficio === 'desconto_percentual' || cupom.tipoBeneficio === 'desconto_valor') && (
+              <div className="rounded-md bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">Desconto calculado</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {formatarMoeda(calcularDesconto(cupom, Number(valorCompra.replace(',', '.')) || 0))}
+                </p>
+              </div>
+            )}
+
             <ConfirmarButton />
           </form>
         ) : (
