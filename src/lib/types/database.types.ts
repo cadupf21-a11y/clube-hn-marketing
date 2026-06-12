@@ -34,6 +34,8 @@ export interface Database {
           taxa_conversao_pontos: number
           teto_pontos_mensal: number | null
           whatsapp: string | null
+          descricao: string | null
+          google_maps_url: string | null
           ativo: boolean
           created_at: string
           updated_at: string
@@ -54,6 +56,8 @@ export interface Database {
           taxa_conversao_pontos?: number
           teto_pontos_mensal?: number | null
           whatsapp?: string | null
+          descricao?: string | null
+          google_maps_url?: string | null
           ativo?: boolean
           created_at?: string
           updated_at?: string

@@ -119,6 +119,29 @@ export function ParceiroForm({
         />
       </div>
 
+      <div>
+        <label htmlFor="google_maps_url" className="block text-sm font-medium text-slate-700">Link do Google Maps</label>
+        <input
+          id="google_maps_url"
+          name="google_maps_url"
+          type="url"
+          placeholder="https://maps.google.com/..."
+          defaultValue={parceiro?.google_maps_url ?? ''}
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <label htmlFor="descricao" className="block text-sm font-medium text-slate-700">Descricao (frase de apresentacao)</label>
+        <input
+          id="descricao"
+          name="descricao"
+          placeholder="Ex: O melhor gelato artesanal da cidade"
+          defaultValue={parceiro?.descricao ?? ''}
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+        />
+      </div>
+
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
           <label htmlFor="cidade" className="block text-sm font-medium text-slate-700">Cidade</label>

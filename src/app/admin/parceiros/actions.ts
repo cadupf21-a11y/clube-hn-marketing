@@ -25,6 +25,8 @@ function lerCampos(formData: FormData): CamposParceiro {
   const estado = String(formData.get('estado') ?? '').trim()
   const logo_url = String(formData.get('logo_url') ?? '').trim()
   const cor_destaque = String(formData.get('cor_destaque') ?? '').trim()
+  const descricao = String(formData.get('descricao') ?? '').trim()
+  const google_maps_url = String(formData.get('google_maps_url') ?? '').trim()
   const taxaRaw = String(formData.get('taxa_conversao_pontos') ?? '').trim()
   const tetoRaw = String(formData.get('teto_pontos_mensal') ?? '').trim()
   const ativo = formData.get('ativo') === 'on'
@@ -58,6 +60,8 @@ function lerCampos(formData: FormData): CamposParceiro {
       estado: estado || null,
       logo_url: logo_url || null,
       cor_destaque: cor_destaque || null,
+      descricao: descricao || null,
+      google_maps_url: google_maps_url || null,
       taxa_conversao_pontos: taxa,
       teto_pontos_mensal: teto,
       ativo,
