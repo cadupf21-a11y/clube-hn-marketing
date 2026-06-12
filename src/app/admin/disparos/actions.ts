@@ -66,17 +66,52 @@ async function buscarDestinatarios(segmento: Segmento) {
   return membros.filter((m) => !!m.telefone)
 }
 
-async function enviarMensagensWhatsapp(telefones: string[], mensagem: string) {
+type Destinatario = { id: string; telefone: string }
+
+type EnvioResultado = {
+  enviados: number
+  finalizado: boolean
+}
+
+async function enviarMensagensWhatsapp(
+  disparoId: string,
+  destinatarios: Destinatario[],
+  mensagem: string,
+): Promise<EnvioResultado> {
+  const webhookUrl = process.env.N8N_DISPARO_WEBHOOK_URL
+
+  if (webhookUrl) {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        disparo_id: disparoId,
+        mensagem,
+        destinatarios: destinatarios.map((d) => ({ membro_id: d.id, telefone: d.telefone })),
+      }),
+    })
+
+    if (!res.ok) {
+      throw new Error('Falha ao acionar o webhook do n8n para envio do disparo.')
+    }
+
+    const data = await res.json().catch(() => null)
+    const enviados = typeof data?.enviados === 'number' ? data.enviados : destinatarios.length
+
+    // n8n processa o envio em background e atualiza disparos.status/total_enviados ao final
+    return { enviados, finalizado: false }
+  }
+
   const apiUrl = process.env.EVOLUTION_API_URL
   const apiKey = process.env.EVOLUTION_API_KEY
   const instancia = process.env.EVOLUTION_INSTANCE
 
   if (!apiUrl || !apiKey || !instancia) {
-    throw new Error('Configuracao da Evolution API ausente (EVOLUTION_API_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE).')
+    throw new Error('Configuracao de envio ausente (defina N8N_DISPARO_WEBHOOK_URL ou EVOLUTION_API_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE).')
   }
 
   let enviados = 0
-  for (const telefone of telefones) {
+  for (const destinatario of destinatarios) {
     try {
       const res = await fetch(`${apiUrl}/message/sendText/${instancia}`, {
         method: 'POST',
@@ -84,7 +119,7 @@ async function enviarMensagensWhatsapp(telefones: string[], mensagem: string) {
           'Content-Type': 'application/json',
           apikey: apiKey,
         },
-        body: JSON.stringify({ number: telefone, text: mensagem }),
+        body: JSON.stringify({ number: destinatario.telefone, text: mensagem }),
       })
       if (res.ok) {
         enviados += 1
@@ -93,7 +128,7 @@ async function enviarMensagensWhatsapp(telefones: string[], mensagem: string) {
       // ignora falhas individuais e segue o envio para os demais
     }
   }
-  return enviados
+  return { enviados, finalizado: true }
 }
 
 export async function criarDisparo(_prevState: { error?: string }, formData: FormData) {
@@ -163,14 +198,15 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
 
   if (acao === 'enviar_agora') {
     try {
-      const enviados = await enviarMensagensWhatsapp(
-        destinatarios.map((d) => d.telefone),
-        mensagem,
-      )
-      await supabase
-        .from('disparos')
-        .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: enviados })
-        .eq('id', disparo.id)
+      const resultado = await enviarMensagensWhatsapp(disparo.id, destinatarios, mensagem)
+      if (resultado.finalizado) {
+        await supabase
+          .from('disparos')
+          .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: resultado.enviados })
+          .eq('id', disparo.id)
+      } else {
+        await supabase.from('disparos').update({ total_enviados: resultado.enviados }).eq('id', disparo.id)
+      }
     } catch (err) {
       await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparo.id)
       return { error: err instanceof Error ? err.message : 'Erro ao enviar mensagens.' }
@@ -195,14 +231,15 @@ export async function enviarDisparoAgendado(disparoId: string) {
   const destinatarios = await buscarDestinatarios(segmento)
 
   try {
-    const enviados = await enviarMensagensWhatsapp(
-      destinatarios.map((d) => d.telefone),
-      disparo.mensagem,
-    )
-    await supabase
-      .from('disparos')
-      .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: enviados })
-      .eq('id', disparoId)
+    const resultado = await enviarMensagensWhatsapp(disparoId, destinatarios, disparo.mensagem)
+    if (resultado.finalizado) {
+      await supabase
+        .from('disparos')
+        .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: resultado.enviados })
+        .eq('id', disparoId)
+    } else {
+      await supabase.from('disparos').update({ total_enviados: resultado.enviados }).eq('id', disparoId)
+    }
   } catch {
     await supabase.from('disparos').update({ status: 'agendado' }).eq('id', disparoId)
   }
