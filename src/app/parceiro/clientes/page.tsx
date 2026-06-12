@@ -24,7 +24,6 @@ export default async function ParceiroClientesPage() {
         emptyMessage="Nenhum cliente encontrado."
         columns={[
           { header: 'Nome', accessor: (c) => c.nome },
-          { header: 'Telefone', accessor: (c) => c.telefone },
           {
             header: 'Ultimo acesso',
             accessor: (c) => (c.ultimo_acesso ? new Date(c.ultimo_acesso).toLocaleDateString('pt-BR') : '-'),

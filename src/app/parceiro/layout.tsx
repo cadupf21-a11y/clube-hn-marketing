@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { getPerfilAtual } from '@/lib/auth/perfil'
 import { DashboardShell, type NavItem } from '@/components/dashboard-shell'
 
@@ -21,8 +22,23 @@ export default async function ParceiroLayout({ children }: { children: React.Rea
     redirect('/login')
   }
 
+  let titulo = 'Clube HN — Parceiro'
+
+  if (perfil.parceiro_id) {
+    const supabase = await createClient()
+    const { data: parceiro } = await supabase
+      .from('parceiros')
+      .select('nome')
+      .eq('id', perfil.parceiro_id)
+      .single()
+
+    if (parceiro?.nome) {
+      titulo = parceiro.nome
+    }
+  }
+
   return (
-    <DashboardShell title="Clube HN — Parceiro" navItems={navItems} userLabel={perfil.nome}>
+    <DashboardShell title={titulo} navItems={navItems} userLabel={perfil.nome}>
       {children}
     </DashboardShell>
   )
