@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { NovoDisparoForm } from './novo-disparo-form'
+import { DisparoForm } from '../disparo-form'
+import { criarDisparo } from '../actions'
 
 export default async function NovoDisparoPage() {
   const supabase = await createClient()
@@ -14,7 +15,7 @@ export default async function NovoDisparoPage() {
         </Link>
         <h2 className="text-base font-medium text-slate-900">Nova campanha</h2>
       </div>
-      <NovoDisparoForm parceiros={parceiros ?? []} />
+      <DisparoForm parceiros={parceiros ?? []} action={criarDisparo} />
     </div>
   )
 }

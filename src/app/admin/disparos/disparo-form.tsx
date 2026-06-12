@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
-import { criarDisparo } from '../actions'
 
 const initialState = { error: undefined as string | undefined }
 
@@ -30,9 +29,27 @@ function SubmitButton({ acao, label }: { acao: string; label: string }) {
   )
 }
 
-export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: string }[] }) {
-  const [state, formAction] = useFormState(criarDisparo, initialState)
-  const [tipoSegmentacao, setTipoSegmentacao] = useState<string>('todos')
+export type DisparoFormValues = {
+  titulo?: string
+  mensagem?: string
+  tipo_segmentacao?: string
+  parceiro_id?: string
+  dias_inativos?: number
+  saldo_minimo?: number
+  agendado_para?: string
+}
+
+export function DisparoForm({
+  parceiros,
+  action,
+  defaultValues,
+}: {
+  parceiros: { id: string; nome: string }[]
+  action: (state: { error?: string }, formData: FormData) => Promise<{ error?: string }>
+  defaultValues?: DisparoFormValues
+}) {
+  const [state, formAction] = useFormState(action, initialState)
+  const [tipoSegmentacao, setTipoSegmentacao] = useState<string>(defaultValues?.tipo_segmentacao ?? 'todos')
 
   return (
     <form action={formAction} className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2">
@@ -42,6 +59,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
           id="titulo"
           name="titulo"
           required
+          defaultValue={defaultValues?.titulo}
           className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
         />
       </div>
@@ -53,6 +71,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
           name="mensagem"
           required
           rows={4}
+          defaultValue={defaultValues?.mensagem}
           className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
         />
       </div>
@@ -85,7 +104,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
               <select
                 id="parceiro_id"
                 name="parceiro_id"
-                defaultValue=""
+                defaultValue={defaultValues?.parceiro_id ?? ''}
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
               >
                 <option value="">Selecione...</option>
@@ -108,7 +127,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
                 name="dias_inativos"
                 type="number"
                 min="1"
-                defaultValue={30}
+                defaultValue={defaultValues?.dias_inativos ?? 30}
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
               />
             </div>
@@ -124,6 +143,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
                 name="saldo_minimo"
                 type="number"
                 min="0"
+                defaultValue={defaultValues?.saldo_minimo}
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
               />
             </div>
@@ -139,6 +159,7 @@ export function NovoDisparoForm({ parceiros }: { parceiros: { id: string; nome: 
           id="agendado_para"
           name="agendado_para"
           type="datetime-local"
+          defaultValue={defaultValues?.agendado_para}
           className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
         />
       </div>

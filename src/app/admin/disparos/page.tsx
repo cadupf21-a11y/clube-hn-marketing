@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
 import type { Database, DisparoStatus } from '@/lib/types/database.types'
 import { enviarDisparoAgendado, cancelarDisparo } from './actions'
+import { ExcluirDisparoButton } from './excluir-disparo-button'
 
 type DisparoComParceiro = Database['public']['Tables']['disparos']['Row'] & {
   parceiros: { nome: string } | null
@@ -56,23 +57,30 @@ export default async function AdminDisparosPage() {
           },
           {
             header: 'Acoes',
-            accessor: (d) =>
-              d.status === 'agendado' ? (
-                <div className="flex items-center gap-3">
-                  <form action={enviarDisparoAgendado.bind(null, d.id)}>
-                    <button type="submit" className="text-sm text-slate-600 underline">
-                      Enviar agora
-                    </button>
-                  </form>
-                  <form action={cancelarDisparo.bind(null, d.id)}>
-                    <button type="submit" className="text-sm text-red-600 underline">
-                      Cancelar
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                '-'
-              ),
+            accessor: (d) => (
+              <div className="flex items-center gap-3">
+                {d.status === 'agendado' && (
+                  <>
+                    <form action={enviarDisparoAgendado.bind(null, d.id)}>
+                      <button type="submit" className="text-sm text-slate-600 underline">
+                        Enviar agora
+                      </button>
+                    </form>
+                    <form action={cancelarDisparo.bind(null, d.id)}>
+                      <button type="submit" className="text-sm text-red-600 underline">
+                        Cancelar
+                      </button>
+                    </form>
+                  </>
+                )}
+                {(d.status === 'rascunho' || d.status === 'agendado') && (
+                  <Link href={`/admin/disparos/${d.id}/editar`} className="text-sm text-slate-600 underline">
+                    Editar
+                  </Link>
+                )}
+                <ExcluirDisparoButton disparoId={d.id} titulo={d.titulo} />
+              </div>
+            ),
           },
         ]}
       />

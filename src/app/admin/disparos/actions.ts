@@ -66,6 +66,42 @@ async function buscarDestinatarios(segmento: Segmento) {
   return membros.filter((m) => !!m.telefone)
 }
 
+type ParseSegmentoResultado = { segmento: Segmento; parceiroId: string | null } | { error: string }
+
+function parseSegmento(formData: FormData): ParseSegmentoResultado {
+  const tipoSegmentacao = String(formData.get('tipo_segmentacao') ?? 'todos').trim() as Segmento['tipo']
+  const parceiroId = String(formData.get('parceiro_id') ?? '').trim()
+  const diasInativosRaw = String(formData.get('dias_inativos') ?? '').trim()
+  const saldoMinimoRaw = String(formData.get('saldo_minimo') ?? '').trim()
+
+  const segmento: Segmento = { tipo: tipoSegmentacao || 'todos' }
+
+  if (segmento.tipo === 'parceiro') {
+    if (!parceiroId) {
+      return { error: 'Selecione o parceiro para esta segmentacao.' }
+    }
+    segmento.parceiro_id = parceiroId
+  }
+
+  if (segmento.tipo === 'inativos') {
+    const dias = Number(diasInativosRaw)
+    if (!diasInativosRaw || Number.isNaN(dias) || dias <= 0) {
+      return { error: 'Informe um numero valido de dias de inatividade.' }
+    }
+    segmento.dias_inativos = dias
+  }
+
+  if (segmento.tipo === 'saldo_minimo') {
+    const saldo = Number(saldoMinimoRaw)
+    if (!saldoMinimoRaw || Number.isNaN(saldo) || saldo < 0) {
+      return { error: 'Informe um valor valido para o saldo minimo de pontos.' }
+    }
+    segmento.saldo_minimo = saldo
+  }
+
+  return { segmento, parceiroId: segmento.tipo === 'parceiro' ? parceiroId : null }
+}
+
 type Destinatario = { id: string; telefone: string }
 
 type EnvioResultado = {
@@ -137,11 +173,6 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
   const acao = String(formData.get('acao') ?? 'rascunho')
   const agendado_para = String(formData.get('agendado_para') ?? '').trim()
 
-  const tipoSegmentacao = String(formData.get('tipo_segmentacao') ?? 'todos').trim() as Segmento['tipo']
-  const parceiroId = String(formData.get('parceiro_id') ?? '').trim()
-  const diasInativosRaw = String(formData.get('dias_inativos') ?? '').trim()
-  const saldoMinimoRaw = String(formData.get('saldo_minimo') ?? '').trim()
-
   if (!titulo || !mensagem) {
     return { error: 'Informe o titulo e a mensagem do disparo.' }
   }
@@ -150,30 +181,11 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
     return { error: 'Informe a data/hora de agendamento.' }
   }
 
-  const segmento: Segmento = { tipo: tipoSegmentacao || 'todos' }
-
-  if (segmento.tipo === 'parceiro') {
-    if (!parceiroId) {
-      return { error: 'Selecione o parceiro para esta segmentacao.' }
-    }
-    segmento.parceiro_id = parceiroId
+  const parsed = parseSegmento(formData)
+  if ('error' in parsed) {
+    return { error: parsed.error }
   }
-
-  if (segmento.tipo === 'inativos') {
-    const dias = Number(diasInativosRaw)
-    if (!diasInativosRaw || Number.isNaN(dias) || dias <= 0) {
-      return { error: 'Informe um numero valido de dias de inatividade.' }
-    }
-    segmento.dias_inativos = dias
-  }
-
-  if (segmento.tipo === 'saldo_minimo') {
-    const saldo = Number(saldoMinimoRaw)
-    if (!saldoMinimoRaw || Number.isNaN(saldo) || saldo < 0) {
-      return { error: 'Informe um valor valido para o saldo minimo de pontos.' }
-    }
-    segmento.saldo_minimo = saldo
-  }
+  const { segmento, parceiroId } = parsed
 
   const destinatarios = await buscarDestinatarios(segmento)
 
@@ -187,7 +199,7 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
     status: acao === 'agendar' ? 'agendado' : acao === 'enviar_agora' ? 'enviando' : 'rascunho',
     agendado_para: acao === 'agendar' ? new Date(agendado_para).toISOString() : null,
     total_destinatarios: destinatarios.length,
-    parceiro_id: segmento.tipo === 'parceiro' ? parceiroId : null,
+    parceiro_id: parceiroId,
   }
 
   const { data: disparo, error } = await supabase.from('disparos').insert(insertData).select('id').single()
@@ -250,5 +262,78 @@ export async function enviarDisparoAgendado(disparoId: string) {
 export async function cancelarDisparo(disparoId: string) {
   const supabase = await createClient()
   await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparoId)
+  revalidatePath('/admin/disparos')
+}
+
+export async function atualizarDisparo(disparoId: string, _prevState: { error?: string }, formData: FormData) {
+  const supabase = await createClient()
+
+  const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
+
+  if (!disparoAtual || (disparoAtual.status !== 'rascunho' && disparoAtual.status !== 'agendado')) {
+    return { error: 'Este disparo nao pode mais ser editado.' }
+  }
+
+  const titulo = String(formData.get('titulo') ?? '').trim()
+  const mensagem = String(formData.get('mensagem') ?? '').trim()
+  const acao = String(formData.get('acao') ?? 'rascunho')
+  const agendado_para = String(formData.get('agendado_para') ?? '').trim()
+
+  if (!titulo || !mensagem) {
+    return { error: 'Informe o titulo e a mensagem do disparo.' }
+  }
+
+  if (acao === 'agendar' && !agendado_para) {
+    return { error: 'Informe a data/hora de agendamento.' }
+  }
+
+  const parsed = parseSegmento(formData)
+  if ('error' in parsed) {
+    return { error: parsed.error }
+  }
+  const { segmento, parceiroId } = parsed
+
+  const destinatarios = await buscarDestinatarios(segmento)
+
+  const updateData: Database['public']['Tables']['disparos']['Update'] = {
+    titulo,
+    mensagem,
+    segmento,
+    status: acao === 'agendar' ? 'agendado' : acao === 'enviar_agora' ? 'enviando' : 'rascunho',
+    agendado_para: acao === 'agendar' ? new Date(agendado_para).toISOString() : null,
+    total_destinatarios: destinatarios.length,
+    parceiro_id: parceiroId,
+  }
+
+  const { error } = await supabase.from('disparos').update(updateData).eq('id', disparoId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  if (acao === 'enviar_agora') {
+    try {
+      const resultado = await enviarMensagensWhatsapp(disparoId, destinatarios, mensagem)
+      if (resultado.finalizado) {
+        await supabase
+          .from('disparos')
+          .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: resultado.enviados })
+          .eq('id', disparoId)
+      } else {
+        await supabase.from('disparos').update({ total_enviados: resultado.enviados }).eq('id', disparoId)
+      }
+    } catch (err) {
+      await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparoId)
+      return { error: err instanceof Error ? err.message : 'Erro ao enviar mensagens.' }
+    }
+  }
+
+  revalidatePath('/admin/disparos')
+  redirect('/admin/disparos')
+}
+
+export async function excluirDisparo(disparoId: string) {
+  const supabase = await createClient()
+  await supabase.from('disparos').delete().eq('id', disparoId)
   revalidatePath('/admin/disparos')
 }
