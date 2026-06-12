@@ -11,7 +11,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+      className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
     >
       {pending ? 'Aplicando...' : 'Aplicar ajuste'}
     </button>
@@ -30,7 +30,7 @@ export function AjustarPontosForm({
   const [state, formAction] = useFormState(ajustarPontos, initialState)
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <form action={formAction} className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <input type="hidden" name="membro_id" value={membroId} />
 
       <div>

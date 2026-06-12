@@ -19,9 +19,9 @@ export function PdvNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`border-b-2 px-3 py-2 text-sm font-medium ${
+            className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               active
-                ? 'border-slate-900 text-slate-900'
+                ? 'border-accent text-accent'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >

@@ -44,7 +44,7 @@ function BuscarButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+      className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
     >
       {pending ? 'Buscando...' : 'Buscar cupom'}
     </button>
@@ -92,7 +92,7 @@ export function ValidarCupomForm() {
 
   if (confirmacao) {
     return (
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
           <span className="text-2xl">✓</span>
         </div>
@@ -116,7 +116,7 @@ export function ValidarCupomForm() {
         <button
           type="button"
           onClick={reiniciar}
-          className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
         >
           Validar outro cupom
         </button>
@@ -128,7 +128,7 @@ export function ValidarCupomForm() {
     const podeResgatar = cupom.status === 'disponivel'
 
     return (
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div>
           <p className="text-xs text-slate-500">Codigo</p>
           <p className="text-lg font-semibold text-slate-900">{cupom.codigo}</p>
@@ -188,7 +188,7 @@ export function ValidarCupomForm() {
     <form
       key={formKey}
       action={buscarAction}
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
     >
       <div>
         <label htmlFor="codigo" className="block text-sm font-medium text-slate-700">

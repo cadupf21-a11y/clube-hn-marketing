@@ -12,7 +12,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+      className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
     >
       {pending ? 'Lancando...' : 'Lancar pontos'}
     </button>
@@ -37,7 +37,7 @@ export function LancarPontosForm({ taxaConversao }: { taxaConversao: number }) {
 
   if (confirmacao) {
     return (
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
           <span className="text-2xl">✓</span>
         </div>
@@ -62,7 +62,7 @@ export function LancarPontosForm({ taxaConversao }: { taxaConversao: number }) {
             setValor('')
             formRef.current?.reset()
           }}
-          className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
         >
           Nova venda
         </button>
@@ -74,7 +74,7 @@ export function LancarPontosForm({ taxaConversao }: { taxaConversao: number }) {
     <form
       ref={formRef}
       action={formAction}
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
     >
       <div>
         <label htmlFor="telefone" className="block text-sm font-medium text-slate-700">

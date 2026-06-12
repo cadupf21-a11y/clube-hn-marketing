@@ -20,14 +20,14 @@ export default async function PdvLayout({ children }: { children: React.ReactNod
     .single()
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+    <div className="min-h-screen bg-appbg">
+      <header className="flex items-center justify-between bg-gradient-to-r from-primary to-accent px-4 py-3 shadow-md">
         <div>
-          <p className="text-xs text-slate-400">PDV - Clube HN</p>
-          <p className="text-sm font-medium text-slate-900">{atendente?.nome ?? 'Atendente'}</p>
+          <p className="text-xs text-white/70">PDV - Clube HN</p>
+          <p className="text-sm font-medium text-white">{atendente?.nome ?? 'Atendente'}</p>
         </div>
         <form action={sairPdv}>
-          <button className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
+          <button className="rounded-md border border-white/40 px-3 py-1.5 text-sm text-white hover:bg-white/10">
             Trocar atendente
           </button>
         </form>

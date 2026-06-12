@@ -55,7 +55,7 @@ export default async function AdminCupomDetalhePage({ params }: { params: Promis
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-sm font-medium text-slate-900">Cupom</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -89,7 +89,7 @@ export default async function AdminCupomDetalhePage({ params }: { params: Promis
           </dl>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-sm font-medium text-slate-900">Cliente e parceiro</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -111,7 +111,7 @@ export default async function AdminCupomDetalhePage({ params }: { params: Promis
           </dl>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:col-span-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-2">
           <h3 className="mb-3 text-sm font-medium text-slate-900">Beneficio</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">

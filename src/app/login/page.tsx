@@ -8,10 +8,10 @@ export default async function LoginPage({
   const { redirect } = await searchParams
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold text-slate-900">Clube HN Marketing</h1>
-        <p className="mb-6 text-sm text-slate-500">
+    <main className="flex min-h-screen items-center justify-center bg-appbg px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+        <h1 className="mb-1 text-center text-2xl font-bold text-gradient-brand">Clube HN Marketing</h1>
+        <p className="mb-6 text-center text-sm text-slate-500">
           Acesso para administradores HN e parceiros.
         </p>
         {redirect?.startsWith('/atendente') || redirect?.startsWith('/pdv') ? (

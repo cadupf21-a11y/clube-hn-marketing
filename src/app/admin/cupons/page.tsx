@@ -50,13 +50,13 @@ export default async function AdminCuponsPage({
         <h2 className="text-base font-medium text-slate-900">Cupons</h2>
         <Link
           href="/admin/cupons/novo"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
           Gerar cupom manual
         </Link>
       </div>
 
-      <form className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <form className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-slate-700">Status</label>
           <select
@@ -115,7 +115,7 @@ export default async function AdminCuponsPage({
 
         <button
           type="submit"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
         >
           Filtrar
         </button>

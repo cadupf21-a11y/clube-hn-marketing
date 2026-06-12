@@ -14,7 +14,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+      className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
     >
       {pending ? 'Salvando...' : label}
     </button>
@@ -33,7 +33,7 @@ export function ParceiroForm({
   const [state, formAction] = useFormState(action, initialState)
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2">
+    <form action={formAction} className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2">
       {parceiro && <input type="hidden" name="id" value={parceiro.id} />}
 
       <div>
