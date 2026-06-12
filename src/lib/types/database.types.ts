@@ -477,6 +477,21 @@ export interface Database {
         Args: Record<string, never>
         Returns: Database['public']['Tables']['cupom_niveis']['Row'][]
       }
+      parceiro_buscar_cupom: {
+        Args: { p_codigo: string }
+        Returns: {
+          id: string
+          codigo: string
+          status: CupomStatus
+          data_validade: string
+          pontos_utilizados: number
+          membro_nome: string
+          nivel_nome: string
+          nivel_descricao: string | null
+          tipo_beneficio: CupomBeneficioTipo
+          valor_beneficio: number | null
+        }[]
+      }
       verificar_pin_atendente: {
         Args: { p_atendente_id: string; p_pin: string }
         Returns: { id: string; nome: string; parceiro_id: string }[]

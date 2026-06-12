@@ -24,21 +24,6 @@ export type BuscarCupomState = {
   cupom?: CupomPreview
 }
 
-type CupomRow = {
-  id: string
-  codigo: string
-  status: CupomStatus
-  data_validade: string
-  pontos_utilizados: number
-  membros: { nome: string } | null
-  cupom_niveis: {
-    nome: string
-    descricao: string | null
-    tipo_beneficio: CupomBeneficioTipo
-    valor_beneficio: number | null
-  } | null
-}
-
 export async function buscarCupom(
   _prevState: BuscarCupomState,
   formData: FormData
@@ -56,32 +41,26 @@ export async function buscarCupom(
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('cupons')
-    .select(
-      'id, codigo, status, data_validade, pontos_utilizados, membros(nome), cupom_niveis(nome, descricao, tipo_beneficio, valor_beneficio)'
-    )
-    .eq('codigo', codigo)
-    .eq('parceiro_id', perfil.parceiro_id)
-    .maybeSingle()
-    .returns<CupomRow>()
+  const { data, error } = await supabase.rpc('parceiro_buscar_cupom', { p_codigo: codigo })
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return { error: 'Cupom nao encontrado.' }
   }
 
+  const cupom = data[0]
+
   return {
     cupom: {
-      id: data.id,
-      codigo: data.codigo,
-      status: data.status,
-      dataValidade: data.data_validade,
-      pontosUtilizados: data.pontos_utilizados,
-      membroNome: data.membros?.nome ?? '-',
-      nivelNome: data.cupom_niveis?.nome ?? '-',
-      descricao: data.cupom_niveis?.descricao ?? null,
-      tipoBeneficio: data.cupom_niveis?.tipo_beneficio ?? 'outro',
-      valorBeneficio: data.cupom_niveis?.valor_beneficio ?? null,
+      id: cupom.id,
+      codigo: cupom.codigo,
+      status: cupom.status,
+      dataValidade: cupom.data_validade,
+      pontosUtilizados: cupom.pontos_utilizados,
+      membroNome: cupom.membro_nome ?? '-',
+      nivelNome: cupom.nivel_nome ?? '-',
+      descricao: cupom.nivel_descricao ?? null,
+      tipoBeneficio: cupom.tipo_beneficio ?? 'outro',
+      valorBeneficio: cupom.valor_beneficio ?? null,
     },
   }
 }
