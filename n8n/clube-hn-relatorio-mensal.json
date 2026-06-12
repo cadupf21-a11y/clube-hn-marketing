@@ -1,0 +1,109 @@
+{
+  "name": "Clube HN - Relatorio Mensal por Parceiro",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Clube HN - Relatorio Mensal por Parceiro (Fase 5)\n\nVariaveis de ambiente do n8n necessarias:\n- `CLUBE_SUPABASE_URL`\n- `CLUBE_SUPABASE_SERVICE_KEY`\n- `EVOLUTION_API_URL` (ex: https://n8n-evolution-api.k41knm.easypanel.host)\n- `EVOLUTION_API_KEY` (apikey global da Evolution API)\n- `EVOLUTION_INSTANCE` (nome da instancia do WhatsApp)\n\nDisparo: todo dia 1 de cada mes, as 8h.\nPara cada parceiro ativo com WhatsApp cadastrado, busca os\ndados do mes anterior via RPC `parceiro_relatorio_mensal`\ne envia um resumo pelo WhatsApp do dono."
+      },
+      "id": "sticky-overview",
+      "name": "Visao Geral",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-mensal",
+      "name": "Todo dia 1 as 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// ============================================================\n// Relatorio mensal por parceiro - Clube HN (Fase 5)\n// Busca todos os parceiros ativos com WhatsApp cadastrado,\n// chama a RPC parceiro_relatorio_mensal (mes anterior por padrao)\n// e monta a mensagem que sera enviada via Evolution API.\n// ============================================================\n\nconst SUPABASE_URL = ($env.CLUBE_SUPABASE_URL || '').replace(/\\/$/, '')\nconst SUPABASE_KEY = $env.CLUBE_SUPABASE_SERVICE_KEY\nconst httpRequest = this.helpers.httpRequest.bind(this)\n\nconst headers = {\n  apikey: SUPABASE_KEY,\n  Authorization: 'Bearer ' + SUPABASE_KEY,\n  'Content-Type': 'application/json',\n}\n\nasync function supaGet(pathAndQuery) {\n  return httpRequest({\n    method: 'GET',\n    url: SUPABASE_URL + '/rest/v1/' + pathAndQuery,\n    headers,\n    json: true,\n  })\n}\n\nasync function supaRpc(fn, args) {\n  return httpRequest({\n    method: 'POST',\n    url: SUPABASE_URL + '/rest/v1/rpc/' + fn,\n    headers,\n    body: args,\n    json: true,\n  })\n}\n\nfunction formatarMoeda(valor) {\n  return 'R$ ' + Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })\n}\n\nfunction nomeMes(dataIso) {\n  const data = new Date(dataIso + 'T00:00:00')\n  const texto = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })\n  return texto.charAt(0).toUpperCase() + texto.slice(1)\n}\n\nconst parceiros = await supaGet('parceiros?ativo=eq.true&whatsapp=not.is.null&select=id,nome,whatsapp')\n\nconst resultados = []\nfor (const parceiro of Array.isArray(parceiros) ? parceiros : []) {\n  const relatorios = await supaRpc('parceiro_relatorio_mensal', { p_parceiro_id: parceiro.id })\n  const r = Array.isArray(relatorios) ? relatorios[0] : relatorios\n  if (!r) continue\n\n  const mensagem =\n    '*Relatorio mensal - Clube HN*\\n' +\n    parceiro.nome + '\\n' +\n    'Periodo: ' + nomeMes(r.mes_referencia) + '\\n\\n' +\n    'Membros ativos no mes: ' + r.membros_ativos + '\\n' +\n    'Clientes novos pelo clube: ' + r.novos_clientes + '\\n' +\n    'Transacoes registradas: ' + r.total_transacoes + '\\n' +\n    'Valor movimentado: ' + formatarMoeda(r.valor_movimentado) + '\\n' +\n    'Pontos gerados: ' + r.pontos_gerados + '\\n' +\n    'Cupons resgatados: ' + r.cupons_resgatados + '\\n' +\n    'Desconto concedido: ' + formatarMoeda(r.desconto_concedido) + '\\n\\n' +\n    'Continue fidelizando seus clientes com o Clube HN!'\n\n  resultados.push({\n    json: {\n      parceiro_id: parceiro.id,\n      parceiro_nome: parceiro.nome,\n      whatsapp: parceiro.whatsapp,\n      mensagem,\n    },\n  })\n}\n\nreturn resultados"
+      },
+      "id": "code-montar-relatorios",
+      "name": "Montar Relatorios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL + \"/message/sendText/\" + $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.whatsapp, text: $json.mensagem }) }}",
+        "options": {}
+      },
+      "id": "http-enviar-relatorio",
+      "name": "Enviar Relatorio WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -40,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Todo dia 1 as 8h": {
+      "main": [
+        [
+          {
+            "node": "Montar Relatorios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Relatorios": {
+      "main": [
+        [
+          {
+            "node": "Enviar Relatorio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

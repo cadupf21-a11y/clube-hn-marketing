@@ -1,0 +1,71 @@
+{
+  "name": "Clube HN - Worker de Disparos",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Clube HN - Worker de Disparos (Fase 6)\n\nVariaveis de ambiente do n8n necessarias:\n- `CLUBE_SUPABASE_URL`\n- `CLUBE_SUPABASE_SERVICE_KEY`\n- `EVOLUTION_API_URL` (ex: https://n8n-evolution-api.k41knm.easypanel.host)\n- `EVOLUTION_API_KEY` (apikey global da Evolution API)\n- `EVOLUTION_INSTANCE` (nome da instancia do WhatsApp)\n\nRoda a cada 5 minutos. Busca disparos com status \"agendado\" e\n`agendado_para <= now()`, marca como \"enviando\", resolve o\npublico-alvo via campo \"segmento\" (jsonb), envia via Evolution API\ncom delay aleatorio de 2 a 5s entre mensagens (anti-ban) e marca\ncomo \"enviado\" com total_destinatarios/total_enviados/enviado_em."
+      },
+      "id": "sticky-overview",
+      "name": "Visao Geral",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-5min",
+      "name": "A cada 5 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// ============================================================\n// Worker de disparos agendados - Clube HN (Fase 6)\n// A cada 5 minutos:\n//  1) busca disparos com status='agendado' e agendado_para <= now()\n//  2) marca cada um como 'enviando'\n//  3) aplica os filtros de segmentacao e busca os membros elegiveis\n//  4) envia a mensagem via Evolution API, com delay aleatorio\n//     de 2 a 5 segundos entre cada envio (anti-ban)\n//  5) marca o disparo como 'enviado', com total_destinatarios,\n//     total_enviados e enviado_em\n//\n// Segmentacao (campo \"segmento\" jsonb em disparos):\n//  - tipo: 'todos' | 'parceiro' | 'inativos' | 'aniversariantes'\n//          | 'saldo_minimo' | 'nunca_resgataram' (default: 'todos')\n//  - parceiro_id: usado quando tipo = 'parceiro'\n//  - dias_inativos: usado quando tipo = 'inativos' (default 30)\n//  - saldo_minimo: usado quando tipo = 'saldo_minimo'\n//  - Campos legados (compat com /admin/disparos), aplicados como\n//    filtros adicionais quando presentes:\n//      nivel, origem_parceiro_id, pontos_minimos\n// ============================================================\n\nconst SUPABASE_URL = ($env.CLUBE_SUPABASE_URL || '').replace(/\\/$/, '')\nconst SUPABASE_KEY = $env.CLUBE_SUPABASE_SERVICE_KEY\nconst EVOLUTION_API_URL = ($env.EVOLUTION_API_URL || '').replace(/\\/$/, '')\nconst EVOLUTION_API_KEY = $env.EVOLUTION_API_KEY\nconst EVOLUTION_INSTANCE = $env.EVOLUTION_INSTANCE\nconst httpRequest = this.helpers.httpRequest.bind(this)\n\nconst headers = {\n  apikey: SUPABASE_KEY,\n  Authorization: 'Bearer ' + SUPABASE_KEY,\n  'Content-Type': 'application/json',\n}\n\nasync function supaGet(pathAndQuery) {\n  return httpRequest({\n    method: 'GET',\n    url: SUPABASE_URL + '/rest/v1/' + pathAndQuery,\n    headers,\n    json: true,\n  })\n}\n\nasync function supaPatch(tableAndQuery, body) {\n  return httpRequest({\n    method: 'PATCH',\n    url: SUPABASE_URL + '/rest/v1/' + tableAndQuery,\n    headers: Object.assign({}, headers, { Prefer: 'return=minimal' }),\n    body,\n    json: true,\n  })\n}\n\nfunction delayAntiBan() {\n  const ms = 2000 + Math.floor(Math.random() * 3001) // entre 2000 e 5000 ms\n  return new Promise((resolve) => setTimeout(resolve, ms))\n}\n\nasync function enviarWhatsapp(telefone, mensagem) {\n  return httpRequest({\n    method: 'POST',\n    url: EVOLUTION_API_URL + '/message/sendText/' + EVOLUTION_INSTANCE,\n    headers: {\n      apikey: EVOLUTION_API_KEY,\n      'Content-Type': 'application/json',\n    },\n    body: { number: telefone, text: mensagem },\n    json: true,\n  })\n}\n\nasync function buscarDestinatarios(segmentoRaw) {\n  const seg = segmentoRaw || {}\n\n  let membros = await supaGet(\n    'membros?ativo=eq.true&select=id,nome,telefone,nivel,pontos_saldo,origem_parceiro_id,data_nascimento'\n  )\n  membros = Array.isArray(membros) ? membros : []\n\n  // ------------------------------------------------------------\n  // Filtros legados (compat com o formulario /admin/disparos)\n  // ------------------------------------------------------------\n  if (seg.nivel) {\n    membros = membros.filter((m) => m.nivel === seg.nivel)\n  }\n  if (seg.origem_parceiro_id) {\n    membros = membros.filter((m) => m.origem_parceiro_id === seg.origem_parceiro_id)\n  }\n  if (seg.pontos_minimos != null) {\n    membros = membros.filter((m) => (m.pontos_saldo ?? 0) >= Number(seg.pontos_minimos))\n  }\n\n  // ------------------------------------------------------------\n  // Tipos de segmentacao\n  // ------------------------------------------------------------\n  const tipo = seg.tipo || 'todos'\n\n  if (tipo === 'parceiro' && seg.parceiro_id) {\n    membros = membros.filter((m) => m.origem_parceiro_id === seg.parceiro_id)\n  }\n\n  if (tipo === 'saldo_minimo' && seg.saldo_minimo != null) {\n    membros = membros.filter((m) => (m.pontos_saldo ?? 0) >= Number(seg.saldo_minimo))\n  }\n\n  if (tipo === 'aniversariantes') {\n    const mesAtual = new Date().getMonth() + 1\n    membros = membros.filter((m) => {\n      if (!m.data_nascimento) return false\n      const mes = parseInt(String(m.data_nascimento).slice(5, 7), 10)\n      return mes === mesAtual\n    })\n  }\n\n  if (tipo === 'inativos') {\n    const dias = Number(seg.dias_inativos) || 30\n    const limite = new Date(Date.now() - dias * 24 * 60 * 60 * 1000)\n    const transacoes = await supaGet('transacoes?select=membro_id,created_at&order=created_at.desc')\n    const ultimaPorMembro = new Map()\n    for (const t of Array.isArray(transacoes) ? transacoes : []) {\n      if (!ultimaPorMembro.has(t.membro_id)) ultimaPorMembro.set(t.membro_id, t.created_at)\n    }\n    membros = membros.filter((m) => {\n      const ultima = ultimaPorMembro.get(m.id)\n      if (!ultima) return true // nunca transacionou conta como inativo\n      return new Date(ultima) < limite\n    })\n  }\n\n  if (tipo === 'nunca_resgataram') {\n    const cupons = await supaGet('cupons?status=eq.resgatado&select=membro_id')\n    const resgataram = new Set((Array.isArray(cupons) ? cupons : []).map((c) => c.membro_id))\n    membros = membros.filter((m) => !resgataram.has(m.id))\n  }\n\n  return membros.filter((m) => !!m.telefone)\n}\n\nconst agora = new Date().toISOString()\nconst disparos = await supaGet(\n  'disparos?status=eq.agendado&agendado_para=lte.' + encodeURIComponent(agora) + '&select=*'\n)\n\nconst resultados = []\n\nfor (const disparo of Array.isArray(disparos) ? disparos : []) {\n  await supaPatch('disparos?id=eq.' + disparo.id, { status: 'enviando' })\n\n  let destinatarios = []\n  let enviados = 0\n\n  try {\n    destinatarios = await buscarDestinatarios(disparo.segmento)\n\n    for (const membro of destinatarios) {\n      try {\n        await enviarWhatsapp(membro.telefone, disparo.mensagem)\n        enviados += 1\n      } catch (e) {\n        // ignora falha individual e segue o envio para os demais\n      }\n      await delayAntiBan()\n    }\n\n    await supaPatch('disparos?id=eq.' + disparo.id, {\n      status: 'enviado',\n      enviado_em: new Date().toISOString(),\n      total_destinatarios: destinatarios.length,\n      total_enviados: enviados,\n    })\n  } catch (e) {\n    await supaPatch('disparos?id=eq.' + disparo.id, { status: 'agendado' })\n    throw e\n  }\n\n  resultados.push({\n    json: {\n      disparo_id: disparo.id,\n      titulo: disparo.titulo,\n      total_destinatarios: destinatarios.length,\n      total_enviados: enviados,\n    },\n  })\n}\n\nreturn resultados.length ? resultados : [{ json: { processados: 0 } }]"
+      },
+      "id": "code-processar-disparos",
+      "name": "Processar Disparos Agendados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "A cada 5 minutos": {
+      "main": [
+        [
+          {
+            "node": "Processar Disparos Agendados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
