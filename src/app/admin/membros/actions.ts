@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 function escapeCsv(value: string) {
@@ -43,4 +44,10 @@ export async function exportarMembrosCsv() {
   ])
 
   return [header, ...linhas].map((linha) => linha.map(escapeCsv).join(',')).join('\n')
+}
+
+export async function excluirMembro(membroId: string) {
+  const supabase = await createClient()
+  await supabase.from('membros').delete().eq('id', membroId)
+  revalidatePath('/admin/membros')
 }

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
 import { ExportarCsvButton } from './exportar-csv-button'
+import { ExcluirMembroButton } from './excluir-membro-button'
 
 export default async function AdminMembrosPage({
   searchParams,
@@ -72,6 +73,10 @@ export default async function AdminMembrosPage({
                 {m.ativo ? 'Ativo' : 'Bloqueado'}
               </span>
             ),
+          },
+          {
+            header: 'Acoes',
+            accessor: (m) => <ExcluirMembroButton membroId={m.id} nome={m.nome} />,
           },
         ]}
       />
