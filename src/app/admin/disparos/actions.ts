@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Database } from '@/lib/types/database.types'
@@ -360,15 +361,11 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
   redirect('/admin/disparos')
 }
 
-export async function enviarDisparoAgendado(disparoId: string) {
-  const supabase = await createClient()
-  const { data: disparo } = await supabase.from('disparos').select('*').eq('id', disparoId).maybeSingle()
-
-  if (!disparo || disparo.status === 'enviado' || disparo.status === 'enviando') {
-    return
-  }
-
-  await supabase.from('disparos').update({ status: 'enviando' }).eq('id', disparoId)
+async function processarEnvioAgendado(
+  supabase: SupabaseClient<Database>,
+  disparo: Database['public']['Tables']['disparos']['Row'],
+) {
+  await supabase.from('disparos').update({ status: 'enviando' }).eq('id', disparo.id)
 
   const segmento = (disparo.segmento ?? {}) as Segmento
 
@@ -378,31 +375,55 @@ export async function enviarDisparoAgendado(disparoId: string) {
       await supabase
         .from('disparos')
         .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: 1 })
-        .eq('id', disparoId)
+        .eq('id', disparo.id)
     } catch {
-      await supabase.from('disparos').update({ status: 'agendado' }).eq('id', disparoId)
+      await supabase.from('disparos').update({ status: 'agendado' }).eq('id', disparo.id)
     }
-    revalidatePath('/admin/disparos')
     return
   }
 
   const destinatarios = await buscarDestinatarios(segmento)
 
   try {
-    const resultado = await enviarMensagensWhatsapp(disparoId, destinatarios, disparo.mensagem)
+    const resultado = await enviarMensagensWhatsapp(disparo.id, destinatarios, disparo.mensagem)
     if (resultado.finalizado) {
       await supabase
         .from('disparos')
         .update({ status: 'enviado', enviado_em: new Date().toISOString(), total_enviados: resultado.enviados })
-        .eq('id', disparoId)
+        .eq('id', disparo.id)
     } else {
-      await supabase.from('disparos').update({ total_enviados: resultado.enviados }).eq('id', disparoId)
+      await supabase.from('disparos').update({ total_enviados: resultado.enviados }).eq('id', disparo.id)
     }
   } catch {
-    await supabase.from('disparos').update({ status: 'agendado' }).eq('id', disparoId)
+    await supabase.from('disparos').update({ status: 'agendado' }).eq('id', disparo.id)
+  }
+}
+
+export async function enviarDisparoAgendado(disparoId: string) {
+  const supabase = await createClient()
+  const { data: disparo } = await supabase.from('disparos').select('*').eq('id', disparoId).maybeSingle()
+
+  if (!disparo || disparo.status === 'enviado' || disparo.status === 'enviando') {
+    return
   }
 
+  await processarEnvioAgendado(supabase, disparo)
+
   revalidatePath('/admin/disparos')
+}
+
+export async function processarDisparosAgendados(supabase: SupabaseClient<Database>): Promise<number> {
+  const { data: disparos } = await supabase
+    .from('disparos')
+    .select('*')
+    .eq('status', 'agendado')
+    .lte('agendado_para', new Date().toISOString())
+
+  for (const disparo of disparos ?? []) {
+    await processarEnvioAgendado(supabase, disparo)
+  }
+
+  return disparos?.length ?? 0
 }
 
 export async function cancelarDisparo(disparoId: string) {

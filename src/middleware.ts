@@ -4,8 +4,14 @@ import { updateSession } from '@/lib/supabase/middleware'
 const PUBLIC_PATHS = ['/login', '/auth']
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user, supabase } = await updateSession(request)
   const { pathname } = request.nextUrl
+
+  // rotas de API tem autenticacao propria (ex.: secret de cron) e nao usam sessao do Supabase
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next()
+  }
+
+  const { supabaseResponse, user, supabase } = await updateSession(request)
 
   const isPublic = pathname === '/' || PUBLIC_PATHS.some((p) => pathname.startsWith(p))
 
