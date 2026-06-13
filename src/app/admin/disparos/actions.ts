@@ -141,9 +141,9 @@ async function enviarMensagensWhatsapp(
     return { enviados, finalizado: false }
   }
 
-  const apiUrl = process.env.EVOLUTION_API_URL
-  const apiKey = process.env.EVOLUTION_API_KEY
-  const instancia = process.env.EVOLUTION_INSTANCE
+  const apiUrl = process.env.EVOLUTION_API_URL?.trim()
+  const apiKey = process.env.EVOLUTION_API_KEY?.trim()
+  const instancia = process.env.EVOLUTION_INSTANCE?.trim()
 
   if (!apiUrl || !apiKey || !instancia) {
     throw new Error('Configuracao de envio ausente (defina N8N_DISPARO_WEBHOOK_URL ou EVOLUTION_API_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE).')
@@ -171,9 +171,9 @@ async function enviarMensagensWhatsapp(
 }
 
 async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
-  const apiUrl = process.env.EVOLUTION_API_URL
-  const apiKey = process.env.EVOLUTION_API_KEY
-  const instancia = process.env.EVOLUTION_INSTANCE
+  const apiUrl = process.env.EVOLUTION_API_URL?.trim()
+  const apiKey = process.env.EVOLUTION_API_KEY?.trim()
+  const instancia = process.env.EVOLUTION_INSTANCE?.trim()
 
   if (!apiUrl || !apiKey || !instancia) {
     throw new Error('Configuracao da Evolution API ausente (defina EVOLUTION_API_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE).')
