@@ -179,7 +179,7 @@ async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
     throw new Error('Configuracao da Evolution API ausente (defina EVOLUTION_API_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE).')
   }
 
-  const res = await fetch(`${apiUrl}/message/sendText/${instancia}`, {
+  const res = await fetch(`${apiUrl}/message/sendText/${encodeURIComponent(instancia)}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -189,7 +189,9 @@ async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
   })
 
   if (!res.ok) {
-    throw new Error('Falha ao enviar mensagem para o grupo via Evolution API.')
+    const corpo = await res.text().catch(() => '')
+    console.error('Erro Evolution API ao enviar mensagem para o grupo:', res.status, res.statusText, corpo)
+    throw new Error(`Falha ao enviar mensagem para o grupo via Evolution API (status ${res.status}): ${corpo || res.statusText}`)
   }
 }
 
