@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogoutButton } from './logout-button'
@@ -26,7 +27,10 @@ export function DashboardShell({
     <div className="min-h-screen bg-appbg">
       <header className="bg-gradient-to-r from-primary to-accent shadow-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <h1 className="text-lg font-semibold text-white">{title}</h1>
+          <div className="flex items-center gap-3">
+            <Image src="/logo.png" alt="Clube HN" width={36} height={36} className="h-9 w-9 rounded-lg" priority />
+            <h1 className="text-lg font-semibold text-white">{title}</h1>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-white/80">{userLabel}</span>
             <LogoutButton />
