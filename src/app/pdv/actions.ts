@@ -65,12 +65,34 @@ export async function lancarPontos(
 
   const { data: parceiro } = await supabase
     .from('parceiros')
-    .select('taxa_conversao_pontos')
+    .select('taxa_conversao_pontos, teto_pontos_mensal')
     .eq('id', perfil.parceiro_id)
     .single()
 
   const taxa = parceiro?.taxa_conversao_pontos ?? 1
-  const pontos = Math.floor(valorCompra * taxa)
+  let pontos = Math.floor(valorCompra * taxa)
+
+  if (parceiro?.teto_pontos_mensal != null) {
+    const agora = new Date()
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString()
+
+    const { data: transacoesMes } = await supabase
+      .from('transacoes')
+      .select('pontos')
+      .eq('parceiro_id', perfil.parceiro_id)
+      .eq('tipo', 'credito')
+      .gte('created_at', inicioMes)
+
+    const pontosJaMes = (transacoesMes ?? []).reduce((soma, t) => soma + t.pontos, 0)
+
+    if (pontosJaMes + pontos > parceiro.teto_pontos_mensal) {
+      pontos = Math.max(0, parceiro.teto_pontos_mensal - pontosJaMes)
+    }
+
+    if (pontos === 0) {
+      return { error: 'Teto mensal de pontos deste parceiro ja foi atingido.' }
+    }
+  }
 
   const { error: erroTransacao } = await supabase.from('transacoes').insert({
     membro_id: membro.id,
