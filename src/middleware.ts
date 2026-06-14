@@ -1,7 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { unstable_cache } from 'next/cache'
 import { updateSession } from '@/lib/supabase/middleware'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const PUBLIC_PATHS = ['/login', '/auth']
+
+// Evita consultar a tabela `perfis` a cada requisicao: o resultado fica em
+// cache por userId por 300s. Usa o admin client (sem RLS) pois a chave de
+// cache e o proprio userId, ja validado por supabase.auth.getUser().
+const getRoleCached = unstable_cache(
+  async (userId: string) => {
+    const admin = createAdminClient()
+    const { data } = await admin.from('perfis').select('role').eq('id', userId).single()
+    return data?.role ?? null
+  },
+  ['perfil-role'],
+  { revalidate: 300 }
+)
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -11,7 +26,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const { supabaseResponse, user, supabase } = await updateSession(request)
+  const { supabaseResponse, user } = await updateSession(request)
 
   const isPublic = pathname === '/' || PUBLIC_PATHS.some((p) => pathname.startsWith(p))
 
@@ -29,7 +44,7 @@ export async function middleware(request: NextRequest) {
       return redirectTo(request, redirectParam)
     }
 
-    const role = await getRole(supabase, user.id)
+    const role = await getRoleCached(user.id)
     return redirectTo(request, role === 'admin' ? '/admin' : '/parceiro')
   }
 
@@ -39,7 +54,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/atendente') ||
     pathname.startsWith('/pdv')
   ) {
-    const role = await getRole(supabase, user.id)
+    const role = await getRoleCached(user.id)
 
     if (!role) return redirectTo(request, '/login')
 
@@ -61,14 +76,6 @@ export async function middleware(request: NextRequest) {
   }
 
   return supabaseResponse
-}
-
-async function getRole(
-  supabase: Awaited<ReturnType<typeof updateSession>>['supabase'],
-  userId: string
-) {
-  const { data } = await supabase.from('perfis').select('role').eq('id', userId).single()
-  return data?.role ?? null
 }
 
 function redirectTo(request: NextRequest, path: string, searchParams?: Record<string, string>) {
