@@ -6,12 +6,29 @@ import { createClient } from '@/lib/supabase/server'
 
 const ATENDENTE_COOKIE = 'atendente_id'
 
+const MAX_TENTATIVAS = 5
+const JANELA_MS = 10 * 60 * 1000 // 10 minutos
+
+const tentativasPin = new Map<string, { tentativas: number; primeiraFalha: number }>()
+
 export async function identificarAtendente(_prevState: { error?: string }, formData: FormData) {
   const atendenteId = String(formData.get('atendente_id') ?? '')
   const pin = String(formData.get('pin') ?? '')
 
   if (!atendenteId || !pin) {
     return { error: 'Selecione o atendente e informe o PIN.' }
+  }
+
+  const agora = Date.now()
+  const registro = tentativasPin.get(atendenteId)
+
+  if (registro && agora - registro.primeiraFalha > JANELA_MS) {
+    tentativasPin.delete(atendenteId)
+  }
+
+  const registroAtual = tentativasPin.get(atendenteId)
+  if (registroAtual && registroAtual.tentativas >= MAX_TENTATIVAS) {
+    return { error: 'Muitas tentativas. Aguarde 10 minutos.' }
   }
 
   const supabase = await createClient()
@@ -21,8 +38,16 @@ export async function identificarAtendente(_prevState: { error?: string }, formD
   })
 
   if (error || !data || data.length === 0) {
+    const existente = tentativasPin.get(atendenteId)
+    if (existente) {
+      existente.tentativas += 1
+    } else {
+      tentativasPin.set(atendenteId, { tentativas: 1, primeiraFalha: agora })
+    }
     return { error: 'PIN invalido.' }
   }
+
+  tentativasPin.delete(atendenteId)
 
   const cookieStore = await cookies()
   cookieStore.set(ATENDENTE_COOKIE, data[0].id, {
