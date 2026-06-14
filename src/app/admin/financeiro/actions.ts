@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizarErro } from '@/lib/utils/erros'
 import type { Database } from '@/lib/types/database.types'
 
 type MensalidadeStatus = Database['public']['Tables']['mensalidades']['Row']['status']
@@ -25,7 +26,7 @@ export async function criarPlano(_prevState: { error?: string }, formData: FormD
   })
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao criar plano.') }
   }
 
   revalidatePath('/admin/financeiro')
@@ -66,7 +67,7 @@ export async function criarMensalidade(_prevState: { error?: string }, formData:
   })
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao criar mensalidade.') }
   }
 
   revalidatePath('/admin/financeiro')

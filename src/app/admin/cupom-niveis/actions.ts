@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizarErro } from '@/lib/utils/erros'
 import type { Database } from '@/lib/types/database.types'
 
 type CupomBeneficioTipo = Database['public']['Tables']['cupom_niveis']['Row']['tipo_beneficio']
@@ -72,7 +73,7 @@ async function sincronizarParceiros(cupomNivelId: string, parceiroIds: string[])
     .eq('cupom_nivel_id', cupomNivelId)
 
   if (deleteError) {
-    return deleteError.message
+    return sanitizarErro(deleteError, 'Erro interno. Tente novamente.')
   }
 
   if (parceiroIds.length > 0) {
@@ -81,7 +82,7 @@ async function sincronizarParceiros(cupomNivelId: string, parceiroIds: string[])
       .insert(parceiroIds.map((parceiro_id) => ({ cupom_nivel_id: cupomNivelId, parceiro_id })))
 
     if (insertError) {
-      return insertError.message
+      return sanitizarErro(insertError, 'Erro interno. Tente novamente.')
     }
   }
 
@@ -100,7 +101,7 @@ export async function criarNivel(_prevState: { error?: string }, formData: FormD
     .single()
 
   if (error || !data) {
-    return { error: error?.message ?? 'Erro ao criar nivel.' }
+    return { error: sanitizarErro(error, 'Erro ao criar nivel.') }
   }
 
   const vinculoError = await sincronizarParceiros(data.id, parsed.parceiroIds)
@@ -123,7 +124,7 @@ export async function atualizarNivel(_prevState: { error?: string }, formData: F
   const { error } = await supabase.from('cupom_niveis').update(parsed.values).eq('id', id)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao atualizar nivel.') }
   }
 
   const vinculoError = await sincronizarParceiros(id, parsed.parceiroIds)

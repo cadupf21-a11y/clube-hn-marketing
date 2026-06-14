@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizarErro } from '@/lib/utils/erros'
 
 function escapeCsv(value: string) {
   if (/[",\n]/.test(value)) {
@@ -18,7 +19,7 @@ export async function exportarMembrosCsv() {
     .order('nome')
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(sanitizarErro(error, 'Erro interno. Tente novamente.'))
   }
 
   const header = [

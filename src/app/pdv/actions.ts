@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilAtual } from '@/lib/auth/perfil'
+import { sanitizarErro } from '@/lib/utils/erros'
 
 export type LancarPontosSucesso = {
   membroNome: string
@@ -56,7 +57,7 @@ export async function lancarPontos(
       .single()
 
     if (erroMembro || !novoMembro) {
-      return { error: erroMembro?.message ?? 'Erro ao cadastrar membro.' }
+      return { error: sanitizarErro(erroMembro, 'Erro ao cadastrar membro.') }
     }
 
     membro = novoMembro
@@ -82,7 +83,7 @@ export async function lancarPontos(
   })
 
   if (erroTransacao) {
-    return { error: erroTransacao.message }
+    return { error: sanitizarErro(erroTransacao, 'Erro ao registrar a compra.') }
   }
 
   const { data: membroAtualizado } = await supabase

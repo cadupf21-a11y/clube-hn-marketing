@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sanitizarErro } from '@/lib/utils/erros'
 import type { Database } from '@/lib/types/database.types'
 
 type FormState = { error?: string; ok?: boolean }
@@ -77,7 +78,7 @@ export async function criarParceiro(_prevState: FormState, formData: FormData): 
   const { data, error } = await supabase.from('parceiros').insert(parsed.values).select('id').single()
 
   if (error || !data) {
-    return { error: error?.message ?? 'Erro ao criar parceiro.' }
+    return { error: sanitizarErro(error, 'Erro ao criar parceiro.') }
   }
 
   revalidatePath('/admin/parceiros')
@@ -95,7 +96,7 @@ export async function atualizarParceiro(_prevState: FormState, formData: FormDat
   const { error } = await supabase.from('parceiros').update(parsed.values).eq('id', id)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao atualizar parceiro.') }
   }
 
   revalidatePath(`/admin/parceiros/${id}`)
@@ -132,7 +133,7 @@ export async function criarUsuarioParceiro(_prevState: FormState, formData: Form
   })
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Nao foi possivel criar o usuario.') }
   }
 
   revalidatePath(`/admin/parceiros/${parceiroId}`)
@@ -151,7 +152,7 @@ export async function resetarSenhaUsuarioParceiro(_prevState: FormState, formDat
   const { error } = await admin.auth.admin.updateUserById(perfilId, { password: senha })
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Nao foi possivel redefinir a senha.') }
   }
 
   revalidatePath(`/admin/parceiros/${parceiroId}`)
@@ -231,7 +232,7 @@ export async function excluirParceiro(parceiroId: string): Promise<{ error?: str
   const { error } = await supabase.from('parceiros').delete().eq('id', parceiroId)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao excluir parceiro.') }
   }
 
   revalidatePath('/admin/parceiros')

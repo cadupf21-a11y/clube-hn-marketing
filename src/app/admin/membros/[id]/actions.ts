@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizarErro } from '@/lib/utils/erros'
 
 type FormState = { error?: string; ok?: boolean }
 
@@ -44,7 +45,7 @@ export async function atualizarMembro(_prevState: FormState, formData: FormData)
     .eq('id', id)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao atualizar membro.') }
   }
 
   revalidatePath(`/admin/membros/${id}`)
@@ -83,7 +84,7 @@ export async function ajustarPontos(_prevState: FormState, formData: FormData): 
   })
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Nao foi possivel ajustar os pontos.') }
   }
 
   revalidatePath(`/admin/membros/${membroId}`)

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizarErro } from '@/lib/utils/erros'
 
 type EmitirCupomState = { error?: string; ok?: boolean; codigo?: string }
 
@@ -23,7 +24,7 @@ export async function emitirCupomManual(_prevState: EmitirCupomState, formData: 
     .maybeSingle()
 
   if (membroError) {
-    return { error: membroError.message }
+    return { error: sanitizarErro(membroError, 'Erro interno. Tente novamente.') }
   }
   if (!membro) {
     return { error: 'Nenhum membro encontrado com esse telefone.' }
@@ -38,7 +39,7 @@ export async function emitirCupomManual(_prevState: EmitirCupomState, formData: 
     .single()
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Nao foi possivel emitir o cupom.') }
   }
 
   revalidatePath('/admin/cupons')

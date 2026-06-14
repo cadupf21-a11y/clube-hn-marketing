@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sanitizarErro } from '@/lib/utils/erros'
 import type { Database } from '@/lib/types/database.types'
 
 type Segmento = {
@@ -225,7 +226,7 @@ export async function criarDisparoGrupo(_prevState: { error?: string }, formData
   const { data: disparo, error } = await supabase.from('disparos').insert(insertData).select('id').single()
 
   if (error || !disparo) {
-    return { error: error?.message ?? 'Erro ao criar disparo.' }
+    return { error: sanitizarErro(error, 'Erro ao criar disparo.') }
   }
 
   if (acao === 'enviar_agora') {
@@ -279,7 +280,7 @@ export async function atualizarDisparoGrupo(disparoId: string, _prevState: { err
   const { error } = await supabase.from('disparos').update(updateData).eq('id', disparoId)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao atualizar disparo.') }
   }
 
   if (acao === 'enviar_agora') {
@@ -337,7 +338,7 @@ export async function criarDisparo(_prevState: { error?: string }, formData: For
   const { data: disparo, error } = await supabase.from('disparos').insert(insertData).select('id').single()
 
   if (error || !disparo) {
-    return { error: error?.message ?? 'Erro ao criar disparo.' }
+    return { error: sanitizarErro(error, 'Erro ao criar disparo.') }
   }
 
   if (acao === 'enviar_agora') {
@@ -475,7 +476,7 @@ export async function atualizarDisparo(disparoId: string, _prevState: { error?: 
   const { error } = await supabase.from('disparos').update(updateData).eq('id', disparoId)
 
   if (error) {
-    return { error: error.message }
+    return { error: sanitizarErro(error, 'Erro ao atualizar disparo.') }
   }
 
   if (acao === 'enviar_agora') {
