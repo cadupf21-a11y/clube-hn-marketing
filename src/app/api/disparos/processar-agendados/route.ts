@@ -3,6 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { processarDisparosAgendados } from '@/app/admin/disparos/actions'
 
 export async function POST(request: Request) {
+  if (!process.env.CRON_SECRET) {
+    return NextResponse.json({ error: 'Configuracao de seguranca ausente.' }, { status: 500 })
+  }
+
   const secret = request.headers.get('x-cron-secret')
 
   if (secret !== process.env.CRON_SECRET) {
