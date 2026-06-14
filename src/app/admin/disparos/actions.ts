@@ -27,6 +27,17 @@ async function buscarDestinatarios(segmento: Segmento) {
     return (data ?? []).filter((m) => !!m.telefone)
   }
 
+  if (tipo === 'inativos') {
+    const dias = segmento.dias_inativos ?? 30
+    const { data } = await supabase.rpc('membros_inativos', { p_dias_inativos: dias })
+    return (data ?? []).filter((m) => !!m.telefone)
+  }
+
+  if (tipo === 'nunca_resgataram') {
+    const { data } = await supabase.rpc('membros_nunca_resgataram')
+    return (data ?? []).filter((m) => !!m.telefone)
+  }
+
   let query = supabase
     .from('membros')
     .select('id, telefone')
@@ -40,33 +51,7 @@ async function buscarDestinatarios(segmento: Segmento) {
   }
 
   const { data } = await query
-  let membros = data ?? []
-
-  if (tipo === 'inativos') {
-    const dias = segmento.dias_inativos ?? 30
-    const limite = new Date(Date.now() - dias * 24 * 60 * 60 * 1000)
-    const { data: transacoes } = await supabase
-      .from('transacoes')
-      .select('membro_id, created_at')
-      .order('created_at', { ascending: false })
-
-    const ultimaPorMembro = new Map<string, string>()
-    for (const t of transacoes ?? []) {
-      if (!ultimaPorMembro.has(t.membro_id)) ultimaPorMembro.set(t.membro_id, t.created_at)
-    }
-
-    membros = membros.filter((m) => {
-      const ultima = ultimaPorMembro.get(m.id)
-      if (!ultima) return true
-      return new Date(ultima) < limite
-    })
-  }
-
-  if (tipo === 'nunca_resgataram') {
-    const { data: cupons } = await supabase.from('cupons').select('membro_id').eq('status', 'resgatado')
-    const resgataram = new Set((cupons ?? []).map((c) => c.membro_id))
-    membros = membros.filter((m) => !resgataram.has(m.id))
-  }
+  const membros = data ?? []
 
   return membros.filter((m) => !!m.telefone)
 }

@@ -479,6 +479,14 @@ export interface Database {
         Args: Record<string, never>
         Returns: { id: string; telefone: string }[]
       }
+      membros_inativos: {
+        Args: { p_dias_inativos: number }
+        Returns: { id: string; telefone: string }[]
+      }
+      membros_nunca_resgataram: {
+        Args: Record<string, never>
+        Returns: { id: string; telefone: string }[]
+      }
       parceiro_niveis_disponiveis: {
         Args: Record<string, never>
         Returns: Database['public']['Tables']['cupom_niveis']['Row'][]
