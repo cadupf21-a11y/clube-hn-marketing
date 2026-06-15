@@ -479,6 +479,15 @@ export interface Database {
         Args: Record<string, never>
         Returns: { id: string; telefone: string }[]
       }
+      consulta_publica_membro: {
+        Args: { p_telefone: string }
+        Returns: {
+          nome: string
+          pontos_saldo: number
+          nivel: string
+          cupons: Json
+        }[]
+      }
       membros_inativos: {
         Args: { p_dias_inativos: number }
         Returns: { id: string; telefone: string }[]

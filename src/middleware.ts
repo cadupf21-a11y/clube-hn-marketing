@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { updateSession } from '@/lib/supabase/middleware'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const PUBLIC_PATHS = ['/login', '/auth']
+const PUBLIC_PATHS = ['/login', '/auth', '/consulta']
 
 // Evita consultar a tabela `perfis` a cada requisicao: o resultado fica em
 // cache por userId por 300s. Usa o admin client (sem RLS) pois a chave de
