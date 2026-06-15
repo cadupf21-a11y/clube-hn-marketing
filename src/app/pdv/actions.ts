@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilAtual } from '@/lib/auth/perfil'
 import { sanitizarErro } from '@/lib/utils/erros'
+import { nomeSchema, telefoneSchema, valorCompraSchema } from '@/lib/validations/schemas'
 
 export type LancarPontosSucesso = {
   membroNome: string
@@ -23,11 +24,19 @@ export async function lancarPontos(
 ): Promise<LancarPontosState> {
   const telefone = String(formData.get('telefone') ?? '').trim()
   const nome = String(formData.get('nome') ?? '').trim()
-  const valorCompra = Number(formData.get('valor_compra') ?? 0)
+  const valorCompraRaw = Number(formData.get('valor_compra') ?? 0)
 
-  if (!telefone || !valorCompra || valorCompra <= 0) {
-    return { error: 'Informe o telefone do membro e o valor da compra.' }
+  const telefoneResult = telefoneSchema.safeParse(telefone)
+  if (!telefoneResult.success) {
+    return { error: telefoneResult.error.errors[0].message }
   }
+
+  const valorCompraResult = valorCompraSchema.safeParse(valorCompraRaw)
+  if (!valorCompraResult.success) {
+    return { error: valorCompraResult.error.errors[0].message }
+  }
+
+  const valorCompra = valorCompraResult.data
 
   const perfil = await getPerfilAtual()
   const cookieStore = await cookies()
@@ -48,6 +57,11 @@ export async function lancarPontos(
   if (!membro) {
     if (!nome) {
       return { error: 'Membro nao encontrado. Informe o nome para cadastrar.' }
+    }
+
+    const nomeResult = nomeSchema.safeParse(nome)
+    if (!nomeResult.success) {
+      return { error: nomeResult.error.errors[0].message }
     }
 
     const { data: novoMembro, error: erroMembro } = await supabase

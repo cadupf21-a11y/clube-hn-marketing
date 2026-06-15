@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { pinSchema } from '@/lib/validations/schemas'
 
 const ATENDENTE_COOKIE = 'atendente_id'
 
@@ -15,8 +16,13 @@ export async function identificarAtendente(_prevState: { error?: string }, formD
   const atendenteId = String(formData.get('atendente_id') ?? '')
   const pin = String(formData.get('pin') ?? '')
 
-  if (!atendenteId || !pin) {
+  if (!atendenteId) {
     return { error: 'Selecione o atendente e informe o PIN.' }
+  }
+
+  const pinResult = pinSchema.safeParse(pin)
+  if (!pinResult.success) {
+    return { error: pinResult.error.errors[0].message }
   }
 
   const agora = Date.now()

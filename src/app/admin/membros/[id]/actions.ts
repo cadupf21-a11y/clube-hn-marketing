@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizarErro } from '@/lib/utils/erros'
+import { cpfSchema, nomeSchema, telefoneSchema } from '@/lib/validations/schemas'
 
 type FormState = { error?: string; ok?: boolean }
 
@@ -15,8 +16,23 @@ export async function atualizarMembro(_prevState: FormState, formData: FormData)
   const diaRaw = String(formData.get('dia_nascimento') ?? '').trim()
   const mesRaw = String(formData.get('mes_nascimento') ?? '').trim()
 
-  if (!id || !nome || !telefone) {
+  if (!id) {
     return { error: 'Informe nome e telefone.' }
+  }
+
+  const nomeResult = nomeSchema.safeParse(nome)
+  if (!nomeResult.success) {
+    return { error: nomeResult.error.errors[0].message }
+  }
+
+  const telefoneResult = telefoneSchema.safeParse(telefone)
+  if (!telefoneResult.success) {
+    return { error: telefoneResult.error.errors[0].message }
+  }
+
+  const cpfResult = cpfSchema.safeParse(cpf || null)
+  if (!cpfResult.success) {
+    return { error: cpfResult.error.errors[0].message }
   }
 
   let data_nascimento: string | null = null
@@ -39,7 +55,7 @@ export async function atualizarMembro(_prevState: FormState, formData: FormData)
       nome,
       telefone,
       email: email || null,
-      cpf: cpf || null,
+      cpf: cpfResult.data,
       data_nascimento,
     })
     .eq('id', id)
