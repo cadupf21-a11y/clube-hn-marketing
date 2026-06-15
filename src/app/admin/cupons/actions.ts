@@ -64,3 +64,25 @@ export async function excluirCupom(cupomId: string, _prevState: { error?: string
   revalidatePath('/admin/cupons')
   return {}
 }
+
+type CorrigirStatusState = { error?: string; ok?: boolean; reativados?: number; expirados?: number }
+
+export async function corrigirStatusCupons(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: CorrigirStatusState,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formData: FormData,
+): Promise<CorrigirStatusState> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('admin_corrigir_status_cupons').single()
+
+  if (error) {
+    return { error: sanitizarErro(error, 'Nao foi possivel corrigir o status dos cupons.') }
+  }
+
+  await registrarAuditoria(supabase, 'corrigir_status_cupons', 'cupom', null, data)
+
+  revalidatePath('/admin/cupons')
+  return { ok: true, reativados: data.reativados, expirados: data.expirados }
+}

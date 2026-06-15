@@ -4,6 +4,7 @@ import { DataTable } from '@/components/data-table'
 import { Pagination } from '@/components/pagination'
 import type { Database, CupomStatus } from '@/lib/types/database.types'
 import { ExcluirCupomButton } from './excluir-cupom-button'
+import { CorrigirStatusCuponsButton } from './corrigir-status-button'
 
 type CupomComRelacoes = Database['public']['Tables']['cupons']['Row'] & {
   membros: { nome: string } | null
@@ -51,14 +52,17 @@ export default async function AdminCuponsPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-medium text-slate-900">Cupons</h2>
-        <Link
-          href="/admin/cupons/novo"
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
-        >
-          Gerar cupom manual
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <CorrigirStatusCuponsButton />
+          <Link
+            href="/admin/cupons/novo"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+          >
+            Gerar cupom manual
+          </Link>
+        </div>
       </div>
 
       <form className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

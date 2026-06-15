@@ -583,6 +583,10 @@ export interface Database {
         Args: { p_membro_id: string; p_cupom_nivel_id: string; p_parceiro_id: string }
         Returns: Database['public']['Tables']['cupons']['Row']
       }
+      admin_corrigir_status_cupons: {
+        Args: Record<string, never>
+        Returns: { reativados: number; expirados: number }[]
+      }
       admin_dashboard_stats: {
         Args: Record<string, never>
         Returns: {
