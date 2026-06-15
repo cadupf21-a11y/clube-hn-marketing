@@ -16,8 +16,6 @@ type Segmento = {
   grupo_jid?: string
 }
 
-const GRUPO_WHATSAPP_JID = '120363408470313611@g.us'
-
 async function buscarDestinatarios(segmento: Segmento) {
   const supabase = createAdminClient()
   const tipo = segmento.tipo ?? 'todos'
@@ -158,6 +156,12 @@ async function enviarMensagensWhatsapp(
 }
 
 async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
+  const grupoJid = process.env.WHATSAPP_GRUPO_JID ?? ''
+
+  if (!grupoJid) {
+    throw new Error('JID do grupo WhatsApp nao configurado (WHATSAPP_GRUPO_JID).')
+  }
+
   const apiUrl = process.env.EVOLUTION_API_URL?.trim()
   const apiKey = process.env.EVOLUTION_API_KEY?.trim()
   const instancia = process.env.EVOLUTION_INSTANCE?.trim()
@@ -172,7 +176,7 @@ async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
       'Content-Type': 'application/json',
       apikey: apiKey,
     },
-    body: JSON.stringify({ number: GRUPO_WHATSAPP_JID, text: mensagem }),
+    body: JSON.stringify({ number: grupoJid, text: mensagem }),
   })
 
   if (!res.ok) {
@@ -183,6 +187,12 @@ async function enviarMensagemGrupoWhatsapp(mensagem: string): Promise<void> {
 }
 
 export async function criarDisparoGrupo(_prevState: { error?: string }, formData: FormData) {
+  const grupoJid = process.env.WHATSAPP_GRUPO_JID ?? ''
+
+  if (!grupoJid) {
+    return { error: 'JID do grupo WhatsApp nao configurado (WHATSAPP_GRUPO_JID).' }
+  }
+
   const titulo = String(formData.get('titulo') ?? '').trim()
   const mensagem = String(formData.get('mensagem') ?? '').trim()
   const acao = String(formData.get('acao') ?? 'rascunho')
@@ -201,7 +211,7 @@ export async function criarDisparoGrupo(_prevState: { error?: string }, formData
   const insertData: Database['public']['Tables']['disparos']['Insert'] = {
     titulo,
     canal: 'whatsapp',
-    segmento: { tipo: 'grupo', grupo_jid: GRUPO_WHATSAPP_JID },
+    segmento: { tipo: 'grupo', grupo_jid: grupoJid },
     mensagem,
     status: acao === 'agendar' ? 'agendado' : acao === 'enviar_agora' ? 'enviando' : 'rascunho',
     agendado_para: acao === 'agendar' ? new Date(agendado_para).toISOString() : null,
@@ -232,6 +242,12 @@ export async function criarDisparoGrupo(_prevState: { error?: string }, formData
 }
 
 export async function atualizarDisparoGrupo(disparoId: string, _prevState: { error?: string }, formData: FormData) {
+  const grupoJid = process.env.WHATSAPP_GRUPO_JID ?? ''
+
+  if (!grupoJid) {
+    return { error: 'JID do grupo WhatsApp nao configurado (WHATSAPP_GRUPO_JID).' }
+  }
+
   const supabase = await createClient()
 
   const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
@@ -256,7 +272,7 @@ export async function atualizarDisparoGrupo(disparoId: string, _prevState: { err
   const updateData: Database['public']['Tables']['disparos']['Update'] = {
     titulo,
     mensagem,
-    segmento: { tipo: 'grupo', grupo_jid: GRUPO_WHATSAPP_JID },
+    segmento: { tipo: 'grupo', grupo_jid: grupoJid },
     status: acao === 'agendar' ? 'agendado' : acao === 'enviar_agora' ? 'enviando' : 'rascunho',
     agendado_para: acao === 'agendar' ? new Date(agendado_para).toISOString() : null,
     total_destinatarios: 1,
