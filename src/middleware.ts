@@ -1,22 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { unstable_cache } from 'next/cache'
 import { updateSession } from '@/lib/supabase/middleware'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const PUBLIC_PATHS = ['/login', '/auth', '/consulta']
 
-// Evita consultar a tabela `perfis` a cada requisicao: o resultado fica em
-// cache por userId por 300s. Usa o admin client (sem RLS) pois a chave de
-// cache e o proprio userId, ja validado por supabase.auth.getUser().
-const getRoleCached = unstable_cache(
-  async (userId: string) => {
-    const admin = createAdminClient()
-    const { data } = await admin.from('perfis').select('role').eq('id', userId).single()
-    return data?.role ?? null
-  },
-  ['perfil-role'],
-  { revalidate: 300 }
-)
+// Usa o admin client (sem RLS) para buscar o role do usuario, ja validado
+// por supabase.auth.getUser(). `unstable_cache` nao e suportado no Edge
+// Runtime do middleware, por isso a consulta e feita diretamente.
+async function getRole(userId: string) {
+  const admin = createAdminClient()
+  const { data } = await admin.from('perfis').select('role').eq('id', userId).single()
+  return data?.role ?? null
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -44,7 +39,7 @@ export async function middleware(request: NextRequest) {
       return redirectTo(request, redirectParam)
     }
 
-    const role = await getRoleCached(user.id)
+    const role = await getRole(user.id)
     return redirectTo(request, role === 'admin' ? '/admin' : '/parceiro')
   }
 
@@ -54,7 +49,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/atendente') ||
     pathname.startsWith('/pdv')
   ) {
-    const role = await getRoleCached(user.id)
+    const role = await getRole(user.id)
 
     if (!role) return redirectTo(request, '/login')
 
