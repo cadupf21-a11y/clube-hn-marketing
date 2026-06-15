@@ -414,6 +414,13 @@ export async function processarDisparosAgendados(supabase: SupabaseClient<Databa
 
 export async function cancelarDisparo(disparoId: string) {
   const supabase = await createClient()
+
+  const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
+
+  if (!disparoAtual || (disparoAtual.status !== 'rascunho' && disparoAtual.status !== 'agendado')) {
+    return
+  }
+
   await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparoId)
   revalidatePath('/admin/disparos')
 }
@@ -487,6 +494,13 @@ export async function atualizarDisparo(disparoId: string, _prevState: { error?: 
 
 export async function excluirDisparo(disparoId: string) {
   const supabase = await createClient()
+
+  const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
+
+  if (disparoAtual?.status === 'enviando') {
+    throw new Error('Nao e possivel excluir um disparo em andamento.')
+  }
+
   await supabase.from('disparos').delete().eq('id', disparoId)
   revalidatePath('/admin/disparos')
 }
