@@ -46,8 +46,17 @@ export async function emitirCupomManual(_prevState: EmitirCupomState, formData: 
   return { ok: true, codigo: (data as { codigo: string } | null)?.codigo }
 }
 
-export async function excluirCupom(cupomId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function excluirCupom(cupomId: string, _prevState: { error?: string }): Promise<{ error?: string }> {
   const supabase = await createClient()
+
+  const { data: cupom } = await supabase.from('cupons').select('status').eq('id', cupomId).maybeSingle()
+
+  if (cupom?.status === 'resgatado') {
+    return { error: 'Nao e possivel excluir um cupom ja resgatado. Isso removeria o historico de beneficio.' }
+  }
+
   await supabase.from('cupons').delete().eq('id', cupomId)
   revalidatePath('/admin/cupons')
+  return {}
 }
