@@ -5,7 +5,7 @@ import { DataTable } from '@/components/data-table'
 import type { Database } from '@/lib/types/database.types'
 import { EditarMembroForm } from './editar-membro-form'
 import { AjustarPontosForm } from './ajustar-pontos-form'
-import { alternarAtivoMembro } from './actions'
+import { AlternarAtivoMembroButton } from './alternar-ativo-membro-button'
 
 type TransacaoComRelacoes = Database['public']['Tables']['transacoes']['Row'] & {
   parceiros: { nome: string } | null
@@ -44,18 +44,7 @@ export default async function AdminMembroDetalhePage({ params }: { params: Promi
           <span className="text-sm text-slate-500">
             Saldo atual: <span className="font-semibold text-slate-900">{membro.pontos_saldo}</span> pts
           </span>
-          <form action={alternarAtivoMembro.bind(null, membro.id, !membro.ativo)}>
-            <button
-              type="submit"
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                membro.ativo
-                  ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-              }`}
-            >
-              {membro.ativo ? 'Bloquear cliente' : 'Desbloquear cliente'}
-            </button>
-          </form>
+          <AlternarAtivoMembroButton membroId={membro.id} ativo={membro.ativo} />
         </div>
       </div>
 

@@ -33,10 +33,21 @@ export async function criarPlano(_prevState: { error?: string }, formData: FormD
   return { error: undefined }
 }
 
-export async function alternarAtivoPlano(planoId: string, ativo: boolean) {
+export async function alternarAtivoPlano(
+  planoId: string,
+  ativo: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: { error?: string },
+): Promise<{ error?: string }> {
   const supabase = await createClient()
-  await supabase.from('planos').update({ ativo }).eq('id', planoId)
+  const { error } = await supabase.from('planos').update({ ativo }).eq('id', planoId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/financeiro')
+  return {}
 }
 
 export async function criarMensalidade(_prevState: { error?: string }, formData: FormData) {
@@ -74,7 +85,12 @@ export async function criarMensalidade(_prevState: { error?: string }, formData:
   return { error: undefined }
 }
 
-export async function atualizarStatusMensalidade(mensalidadeId: string, status: MensalidadeStatus) {
+export async function atualizarStatusMensalidade(
+  mensalidadeId: string,
+  status: MensalidadeStatus,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: { error?: string },
+): Promise<{ error?: string }> {
   const supabase = await createClient()
   const update: Database['public']['Tables']['mensalidades']['Update'] = { status }
   if (status === 'pago') {
@@ -82,6 +98,12 @@ export async function atualizarStatusMensalidade(mensalidadeId: string, status: 
   } else {
     update.pago_em = null
   }
-  await supabase.from('mensalidades').update(update).eq('id', mensalidadeId)
+  const { error } = await supabase.from('mensalidades').update(update).eq('id', mensalidadeId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/financeiro')
+  return {}
 }

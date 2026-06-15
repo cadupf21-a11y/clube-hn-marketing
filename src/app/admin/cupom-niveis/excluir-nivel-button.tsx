@@ -1,18 +1,18 @@
 'use client'
 
 import { useFormState } from 'react-dom'
-import { excluirMembro } from './actions'
+import { excluirNivel } from './actions'
 
 const initialState: { error?: string } = {}
 
-export function ExcluirMembroButton({ membroId, nome }: { membroId: string; nome: string }) {
-  const [state, formAction] = useFormState(excluirMembro.bind(null, membroId), initialState)
+export function ExcluirNivelButton({ nivelId, nome }: { nivelId: string; nome: string }) {
+  const [state, formAction] = useFormState(excluirNivel.bind(null, nivelId), initialState)
 
   return (
     <form
       action={formAction}
       onSubmit={(e) => {
-        if (!confirm(`Excluir o cliente ${nome}? Esta acao nao pode ser desfeita.`)) {
+        if (!confirm(`Excluir o nivel ${nome}? Esta acao nao pode ser desfeita.`)) {
           e.preventDefault()
         }
       }}

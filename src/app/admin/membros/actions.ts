@@ -47,8 +47,15 @@ export async function exportarMembrosCsv() {
   return [header, ...linhas].map((linha) => linha.map(escapeCsv).join(',')).join('\n')
 }
 
-export async function excluirMembro(membroId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function excluirMembro(membroId: string, _prevState: { error?: string }): Promise<{ error?: string }> {
   const supabase = await createClient()
-  await supabase.from('membros').delete().eq('id', membroId)
+  const { error } = await supabase.from('membros').delete().eq('id', membroId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/membros')
+  return {}
 }

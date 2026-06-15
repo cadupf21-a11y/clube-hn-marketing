@@ -3,7 +3,8 @@ import { DataTable } from '@/components/data-table'
 import type { Database, MensalidadeStatus } from '@/lib/types/database.types'
 import { NovoPlanoForm } from './novo-plano-form'
 import { NovaMensalidadeForm } from './nova-mensalidade-form'
-import { alternarAtivoPlano, atualizarStatusMensalidade } from './actions'
+import { AlternarAtivoPlanoButton } from './alternar-ativo-plano-button'
+import { AtualizarStatusMensalidadeButton } from './atualizar-status-mensalidade-button'
 
 type MensalidadeComRelacoes = Database['public']['Tables']['mensalidades']['Row'] & {
   parceiros: { nome: string } | null
@@ -60,13 +61,7 @@ export default async function AdminFinanceiroPage() {
             },
             {
               header: 'Acoes',
-              accessor: (p) => (
-                <form action={alternarAtivoPlano.bind(null, p.id, !p.ativo)}>
-                  <button type="submit" className="text-sm text-slate-600 underline">
-                    {p.ativo ? 'Desativar' : 'Ativar'}
-                  </button>
-                </form>
-              ),
+              accessor: (p) => <AlternarAtivoPlanoButton planoId={p.id} ativo={p.ativo} />,
             },
           ]}
         />
@@ -97,11 +92,7 @@ export default async function AdminFinanceiroPage() {
               accessor: (m) => (
                 <div className="flex flex-wrap items-center gap-2">
                   {PROXIMOS_STATUS[m.status].map((novoStatus) => (
-                    <form key={novoStatus} action={atualizarStatusMensalidade.bind(null, m.id, novoStatus)}>
-                      <button type="submit" className="text-sm text-slate-600 underline">
-                        Marcar {novoStatus}
-                      </button>
-                    </form>
+                    <AtualizarStatusMensalidadeButton key={novoStatus} mensalidadeId={m.id} novoStatus={novoStatus} />
                   ))}
                 </div>
               ),

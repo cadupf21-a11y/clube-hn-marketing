@@ -428,17 +428,24 @@ export async function processarDisparosAgendados(supabase: SupabaseClient<Databa
   return disparos?.length ?? 0
 }
 
-export async function cancelarDisparo(disparoId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function cancelarDisparo(disparoId: string, _prevState: { error?: string }): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
 
   if (!disparoAtual || (disparoAtual.status !== 'rascunho' && disparoAtual.status !== 'agendado')) {
-    return
+    return {}
   }
 
-  await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparoId)
+  const { error } = await supabase.from('disparos').update({ status: 'cancelado' }).eq('id', disparoId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/disparos')
+  return {}
 }
 
 export async function atualizarDisparo(disparoId: string, _prevState: { error?: string }, formData: FormData) {
@@ -508,15 +515,22 @@ export async function atualizarDisparo(disparoId: string, _prevState: { error?: 
   redirect('/admin/disparos')
 }
 
-export async function excluirDisparo(disparoId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function excluirDisparo(disparoId: string, _prevState: { error?: string }): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const { data: disparoAtual } = await supabase.from('disparos').select('status').eq('id', disparoId).maybeSingle()
 
   if (disparoAtual?.status === 'enviando') {
-    throw new Error('Nao e possivel excluir um disparo em andamento.')
+    return { error: 'Nao e possivel excluir um disparo em andamento.' }
   }
 
-  await supabase.from('disparos').delete().eq('id', disparoId)
+  const { error } = await supabase.from('disparos').delete().eq('id', disparoId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/disparos')
+  return {}
 }

@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
 import type { Database, DisparoStatus } from '@/lib/types/database.types'
-import { enviarDisparoAgendado, cancelarDisparo } from './actions'
+import { enviarDisparoAgendado } from './actions'
 import { ExcluirDisparoButton } from './excluir-disparo-button'
+import { CancelarDisparoButton } from './cancelar-disparo-button'
 
 type Segmento = {
   tipo?: 'todos' | 'parceiro' | 'inativos' | 'aniversariantes' | 'saldo_minimo' | 'nunca_resgataram' | 'grupo'
@@ -105,11 +106,7 @@ export default async function AdminDisparosPage({
                         Enviar agora
                       </button>
                     </form>
-                    <form action={cancelarDisparo.bind(null, d.id)}>
-                      <button type="submit" className="text-sm text-red-600 underline">
-                        Cancelar
-                      </button>
-                    </form>
+                    <CancelarDisparoButton disparoId={d.id} />
                   </>
                 )}
                 {(d.status === 'rascunho' || d.status === 'agendado') && (

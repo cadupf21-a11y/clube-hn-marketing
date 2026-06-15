@@ -137,14 +137,32 @@ export async function atualizarNivel(_prevState: { error?: string }, formData: F
   redirect('/admin/cupom-niveis')
 }
 
-export async function alternarAtivoNivel(nivelId: string, ativo: boolean) {
+export async function alternarAtivoNivel(
+  nivelId: string,
+  ativo: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: { error?: string },
+): Promise<{ error?: string }> {
   const supabase = await createClient()
-  await supabase.from('cupom_niveis').update({ ativo }).eq('id', nivelId)
+  const { error } = await supabase.from('cupom_niveis').update({ ativo }).eq('id', nivelId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/cupom-niveis')
+  return {}
 }
 
-export async function excluirNivel(nivelId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function excluirNivel(nivelId: string, _prevState: { error?: string }): Promise<{ error?: string }> {
   const supabase = await createClient()
-  await supabase.from('cupom_niveis').delete().eq('id', nivelId)
+  const { error } = await supabase.from('cupom_niveis').delete().eq('id', nivelId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath('/admin/cupom-niveis')
+  return {}
 }

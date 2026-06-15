@@ -68,11 +68,22 @@ export async function atualizarMembro(_prevState: FormState, formData: FormData)
   return { ok: true }
 }
 
-export async function alternarAtivoMembro(membroId: string, ativo: boolean) {
+export async function alternarAtivoMembro(
+  membroId: string,
+  ativo: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: { error?: string },
+): Promise<{ error?: string }> {
   const supabase = await createClient()
-  await supabase.from('membros').update({ ativo }).eq('id', membroId)
+  const { error } = await supabase.from('membros').update({ ativo }).eq('id', membroId)
+
+  if (error) {
+    return { error: 'Erro ao executar operacao. Tente novamente.' }
+  }
+
   revalidatePath(`/admin/membros/${membroId}`)
   revalidatePath('/admin/membros')
+  return {}
 }
 
 export async function ajustarPontos(_prevState: FormState, formData: FormData): Promise<FormState> {

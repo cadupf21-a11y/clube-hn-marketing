@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
 import type { Database } from '@/lib/types/database.types'
-import { alternarAtivoNivel, excluirNivel } from './actions'
+import { AlternarAtivoNivelButton } from './alternar-ativo-nivel-button'
+import { ExcluirNivelButton } from './excluir-nivel-button'
 
 type CupomNivelComParceiro = Database['public']['Tables']['cupom_niveis']['Row'] & {
   parceiros: { nome: string } | null
@@ -74,16 +75,8 @@ export default async function AdminCupomNiveisPage() {
                 <Link href={`/admin/cupom-niveis/${n.id}`} className="text-sm text-slate-600 underline">
                   Editar
                 </Link>
-                <form action={alternarAtivoNivel.bind(null, n.id, !n.ativo)}>
-                  <button type="submit" className="text-sm text-slate-600 underline">
-                    {n.ativo ? 'Desativar' : 'Ativar'}
-                  </button>
-                </form>
-                <form action={excluirNivel.bind(null, n.id)}>
-                  <button type="submit" className="text-sm text-red-600 underline">
-                    Excluir
-                  </button>
-                </form>
+                <AlternarAtivoNivelButton nivelId={n.id} ativo={n.ativo} />
+                <ExcluirNivelButton nivelId={n.id} nome={n.nome} />
               </div>
             ),
           },
