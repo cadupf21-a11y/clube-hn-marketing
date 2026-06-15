@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizarErro } from '@/lib/utils/erros'
 import { cpfSchema, nomeSchema, telefoneSchema } from '@/lib/validations/schemas'
+import { registrarAuditoria } from '@/lib/audit'
 
 type FormState = { error?: string; ok?: boolean }
 
@@ -82,6 +83,8 @@ export async function alternarAtivoMembro(
     return { error: 'Erro ao executar operacao. Tente novamente.' }
   }
 
+  await registrarAuditoria(supabase, 'status_membro', 'membro', membroId, { ativo })
+
   revalidatePath(`/admin/membros/${membroId}`)
   revalidatePath('/admin/membros')
   return {}
@@ -114,6 +117,8 @@ export async function ajustarPontos(_prevState: FormState, formData: FormData): 
   if (error) {
     return { error: sanitizarErro(error, 'Nao foi possivel ajustar os pontos.') }
   }
+
+  await registrarAuditoria(supabase, 'ajuste_pontos', 'membro', membroId, { pontos, descricao })
 
   revalidatePath(`/admin/membros/${membroId}`)
   return { ok: true }

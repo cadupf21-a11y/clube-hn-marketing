@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizarErro } from '@/lib/utils/erros'
+import { registrarAuditoria } from '@/lib/audit'
 
 function escapeCsv(value: string) {
   if (/[",\n]/.test(value)) {
@@ -55,6 +56,8 @@ export async function excluirMembro(membroId: string, _prevState: { error?: stri
   if (error) {
     return { error: 'Erro ao executar operacao. Tente novamente.' }
   }
+
+  await registrarAuditoria(supabase, 'exclusao_membro', 'membro', membroId)
 
   revalidatePath('/admin/membros')
   return {}

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizarErro } from '@/lib/utils/erros'
+import { registrarAuditoria } from '@/lib/audit'
 import type { Database } from '@/lib/types/database.types'
 
 type MensalidadeStatus = Database['public']['Tables']['mensalidades']['Row']['status']
@@ -103,6 +104,8 @@ export async function atualizarStatusMensalidade(
   if (error) {
     return { error: 'Erro ao executar operacao. Tente novamente.' }
   }
+
+  await registrarAuditoria(supabase, 'status_mensalidade', 'mensalidade', mensalidadeId, { status })
 
   revalidatePath('/admin/financeiro')
   return {}

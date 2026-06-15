@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizarErro } from '@/lib/utils/erros'
+import { registrarAuditoria } from '@/lib/audit'
 
 type EmitirCupomState = { error?: string; ok?: boolean; codigo?: string }
 
@@ -42,8 +43,11 @@ export async function emitirCupomManual(_prevState: EmitirCupomState, formData: 
     return { error: sanitizarErro(error, 'Nao foi possivel emitir o cupom.') }
   }
 
+  const cupom = data as { id: string; codigo: string } | null
+  await registrarAuditoria(supabase, 'emissao_cupom_manual', 'cupom', cupom?.id ?? null)
+
   revalidatePath('/admin/cupons')
-  return { ok: true, codigo: (data as { codigo: string } | null)?.codigo }
+  return { ok: true, codigo: cupom?.codigo }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

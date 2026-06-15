@@ -460,6 +460,28 @@ export interface Database {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          id: string
+          acao: string
+          entidade: string
+          entidade_id: string | null
+          executado_por: string | null
+          detalhes: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          acao: string
+          entidade: string
+          entidade_id?: string | null
+          executado_por?: string | null
+          detalhes?: Json | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['audit_log']['Insert']>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
