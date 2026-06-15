@@ -45,6 +45,7 @@ export async function atualizarMembro(_prevState: FormState, formData: FormData)
       return { error: 'Informe um dia e mes de nascimento validos.' }
     }
 
+    // Ano 2000 e um placeholder — apenas dia e mes tem significado
     data_nascimento = `2000-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
   }
 
