@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
+import { Pagination } from '@/components/pagination'
 import type { Database, CupomStatus } from '@/lib/types/database.types'
 import { ExcluirCupomButton } from './excluir-cupom-button'
 
@@ -11,20 +12,23 @@ type CupomComRelacoes = Database['public']['Tables']['cupons']['Row'] & {
 }
 
 const STATUS_OPCOES: CupomStatus[] = ['disponivel', 'resgatado', 'expirado', 'cancelado']
+const PAGE_SIZE = 50
 
 export default async function AdminCuponsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; parceiro_id?: string; de?: string; ate?: string }>
+  searchParams: Promise<{ status?: string; parceiro_id?: string; de?: string; ate?: string; page?: string }>
 }) {
-  const { status, parceiro_id, de, ate } = await searchParams
+  const { status, parceiro_id, de, ate, page: pageParam } = await searchParams
+  const page = Math.max(1, Number(pageParam) || 1)
+  const offset = (page - 1) * PAGE_SIZE
   const supabase = await createClient()
 
   let query = supabase
     .from('cupons')
-    .select('*, membros(nome), parceiros(nome), cupom_niveis(nome)')
+    .select('*, membros(nome), parceiros(nome), cupom_niveis(nome)', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(100)
+    .range(offset, offset + PAGE_SIZE - 1)
 
   if (status && (STATUS_OPCOES as string[]).includes(status)) {
     query = query.eq('status', status as CupomStatus)
@@ -39,10 +43,11 @@ export default async function AdminCuponsPage({
     query = query.lte('data_emissao', `${ate}T23:59:59`)
   }
 
-  const [{ data: cupons }, { data: parceiros }] = await Promise.all([
+  const [{ data: cupons, count }, { data: parceiros }] = await Promise.all([
     query.returns<CupomComRelacoes[]>(),
     supabase.from('parceiros').select('id, nome').order('nome'),
   ])
+  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -156,6 +161,13 @@ export default async function AdminCuponsPage({
             ),
           },
         ]}
+      />
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        basePath="/admin/cupons"
+        searchParams={{ status, parceiro_id, de, ate }}
       />
     </div>
   )

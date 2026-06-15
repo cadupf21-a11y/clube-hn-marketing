@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilAtual } from '@/lib/auth/perfil'
 import { DataTable } from '@/components/data-table'
+import { Pagination } from '@/components/pagination'
 import type { Database } from '@/lib/types/database.types'
 
 type TransacaoComRelacoes = Database['public']['Tables']['transacoes']['Row'] & {
@@ -8,17 +9,28 @@ type TransacaoComRelacoes = Database['public']['Tables']['transacoes']['Row'] & 
   atendentes: { nome: string } | null
 }
 
-export default async function ParceiroTransacoesPage() {
+const PAGE_SIZE = 50
+
+export default async function ParceiroTransacoesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const { page: pageParam } = await searchParams
+  const page = Math.max(1, Number(pageParam) || 1)
+  const offset = (page - 1) * PAGE_SIZE
+
   const perfil = await getPerfilAtual()
   const supabase = await createClient()
 
-  const { data: transacoes } = await supabase
+  const { data: transacoes, count } = await supabase
     .from('transacoes')
-    .select('*, membros(nome), atendentes(nome)')
+    .select('*, membros(nome), atendentes(nome)', { count: 'exact' })
     .eq('parceiro_id', perfil!.parceiro_id!)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(offset, offset + PAGE_SIZE - 1)
     .returns<TransacaoComRelacoes[]>()
+  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE))
 
   return (
     <div>
@@ -35,6 +47,8 @@ export default async function ParceiroTransacoesPage() {
           { header: 'Data', accessor: (t) => new Date(t.created_at).toLocaleString('pt-BR') },
         ]}
       />
+
+      <Pagination page={page} totalPages={totalPages} basePath="/parceiro/transacoes" />
     </div>
   )
 }

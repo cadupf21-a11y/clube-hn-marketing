@@ -1,29 +1,35 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DataTable } from '@/components/data-table'
+import { Pagination } from '@/components/pagination'
 import { ExportarCsvButton } from './exportar-csv-button'
 import { ExcluirMembroButton } from './excluir-membro-button'
+
+const PAGE_SIZE = 50
 
 export default async function AdminMembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; page?: string }>
 }) {
-  const { q } = await searchParams
+  const { q, page: pageParam } = await searchParams
   const termo = (q ?? '').trim()
+  const page = Math.max(1, Number(pageParam) || 1)
+  const offset = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
   let query = supabase
     .from('membros')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(offset, offset + PAGE_SIZE - 1)
 
   if (termo) {
     query = query.or(`nome.ilike.%${termo}%,telefone.ilike.%${termo}%`)
   }
 
-  const { data: membros } = await query
+  const { data: membros, count } = await query
+  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -80,6 +86,8 @@ export default async function AdminMembrosPage({
           },
         ]}
       />
+
+      <Pagination page={page} totalPages={totalPages} basePath="/admin/membros" searchParams={{ q: termo }} />
     </div>
   )
 }
